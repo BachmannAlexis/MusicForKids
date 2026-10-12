@@ -44,6 +44,7 @@ npm start            # serves on http://localhost:8080
 Opening `index.html` directly from disk does not work, because browsers block JavaScript modules on `file://`.
 
 It is published at **https://bachmannalexis.github.io/MusicForKids/** by the *Deploy to GitHub Pages* workflow, which runs the tests and deploys on every push to `main` (Settings → Pages → Source: **GitHub Actions**).
+`npm run build` (run by the workflow) bundles and minifies the app into `_site/` (one script instead of ~35 modules) and adds `sw.js`, an offline cache: after the first visit the app opens instantly and works without internet.
 
 ## Tests
 

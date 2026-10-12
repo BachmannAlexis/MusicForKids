@@ -131,7 +131,7 @@ function explorer(root, app) {
                 style: { '--role': colorFor(c) },
                 'aria-label': `${c.roman} · ${chordName(label(c.notes[0]), c.type, lang)}`,
                 'aria-pressed': String(mode === state.mode && c.degree === state.degree),
-                onclick: () => select(c.degree, mode),
+                ontap: () => select(c.degree, mode),
               },
               c.roman,
             ),

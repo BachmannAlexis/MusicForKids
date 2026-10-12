@@ -48,7 +48,7 @@ export function runQuiz(root, app, spec) {
             style: choice.color ? { '--c': choice.color, '--ink': choice.ink } : null,
             title: choice.title,
             'aria-label': choice.title,
-            onclick: (e) => answer(choice, e.currentTarget),
+            ontap: (e) => answer(choice, e.currentTarget),
           },
           choice.label,
         ),

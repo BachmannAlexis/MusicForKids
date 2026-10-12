@@ -12,10 +12,29 @@ function context() {
   if (!ctx) {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return null;
-    ctx = new AudioCtx();
+    // 'interactive' asks the phone for its shortest sound delay.
+    ctx = new AudioCtx({ latencyHint: 'interactive' });
   }
   if (ctx.state === 'suspended') ctx.resume();
   return ctx;
+}
+
+// Browsers only start sound after a touch. Get the audio engine running on the
+// very first touch anywhere (even on a menu), so the first note played is not late.
+export function warmUpAudio() {
+  const wake = () => {
+    const ac = context();
+    if (!ac) return;
+    // A silent instant of sound fully unlocks audio on iPhone.
+    const buffer = ac.createBuffer(1, 1, ac.sampleRate);
+    const source = ac.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ac.destination);
+    source.start();
+  };
+  for (const type of ['pointerdown', 'keydown']) {
+    window.addEventListener(type, wake, { capture: true, once: true, passive: true });
+  }
 }
 
 // A soft, bell-like xylophone tone: a sine with a quieter octave partial.

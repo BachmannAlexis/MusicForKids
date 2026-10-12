@@ -129,7 +129,7 @@ function learn(root, app) {
             class: i.id === learnChoice.interval ? 'selected' : '',
             'aria-pressed': String(i.id === learnChoice.interval),
             'aria-label': intervalName(i, lang),
-            onclick: () => {
+            ontap: () => {
               learnChoice.interval = i.id;
               update();
             },

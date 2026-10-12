@@ -194,7 +194,7 @@ function inScale(root, app) {
       ...chords.map((c, i) =>
         h(
           'button',
-          { type: 'button', onclick: () => select(i), 'aria-label': chordName(label(c.notes[0]), c.type, lang) },
+          { type: 'button', ontap: () => select(i), 'aria-label': chordName(label(c.notes[0]), c.type, lang) },
           h('span', { class: 'roman' }, c.roman),
           h('span', { class: 'symbol' }, chordSymbol(label(c.notes[0]), c.type)),
         ),
