@@ -34,6 +34,8 @@ const main = document.getElementById('main');
 const header = document.getElementById('header');
 const dialog = document.getElementById('settings');
 let cleanup = null;
+let currentPath = location.hash.replace(/^#\/?/, '');
+let confirmingReset = false;
 
 function persist() {
   save({ settings: app.settings, progress: app.progress });
@@ -60,7 +62,7 @@ function renderHeader() {
 function render() {
   cleanup?.();
   cleanup = null;
-  const [route = '', ...params] = location.hash.replace(/^#\/?/, '').split('/');
+  const [route = '', ...params] = currentPath.split('/');
   const mountRoute = ROUTES[route] ?? ROUTES[''];
   main.replaceChildren();
   main.className = `screen screen-${route || 'home'}`;
@@ -89,6 +91,7 @@ function choice(label, current, options, onPick) {
 }
 
 function openSettings() {
+  confirmingReset = false;
   renderSettings();
   dialog.showModal();
 }
@@ -132,15 +135,21 @@ function renderSettings() {
         'button',
         {
           type: 'button',
-          class: 'btn secondary small',
+          class: `btn secondary small${confirmingReset ? ' danger' : ''}`,
           onclick: () => {
-            if (!confirm(t('settings.resetConfirm'))) return;
+            if (!confirmingReset) {
+              confirmingReset = true;
+              renderSettings();
+              return;
+            }
+            confirmingReset = false;
             app.updateProgress(() => emptyProgress());
+            renderSettings();
             render();
           },
         },
         '🗑 ',
-        t('settings.reset'),
+        confirmingReset ? t('settings.resetConfirm') : t('settings.reset'),
       ),
       h('button', { class: 'btn', value: 'close' }, t('close')),
     ),
@@ -149,5 +158,27 @@ function renderSettings() {
 
 applySettings();
 renderHeader();
-window.addEventListener('hashchange', render);
+function go(path) {
+  currentPath = path;
+  try {
+    if (location.hash.replace(/^#\/?/, '') !== path) history.pushState(null, '', `#/${path}`);
+  } catch {
+    // Some embedded viewers block history changes; the in-memory route still works.
+  }
+  render();
+}
+
+document.addEventListener('click', (e) => {
+  const link = e.target.closest?.('a[href^="#/"]');
+  if (!link || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return;
+  e.preventDefault();
+  go(link.getAttribute('href').slice(2));
+});
+
+const syncFromLocation = () => {
+  currentPath = location.hash.replace(/^#\/?/, '');
+  render();
+};
+window.addEventListener('hashchange', syncFromLocation);
+window.addEventListener('popstate', syncFromLocation);
 render();

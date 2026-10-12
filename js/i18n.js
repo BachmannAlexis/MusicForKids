@@ -55,7 +55,7 @@ const STRINGS = {
     'settings.on': 'On',
     'settings.off': 'Off',
     'settings.reset': 'Reset my stars',
-    'settings.resetConfirm': 'Erase all stars?',
+    'settings.resetConfirm': 'Tap again to erase all stars',
     close: 'Close',
   },
   fr: {
@@ -114,7 +114,7 @@ const STRINGS = {
     'settings.on': 'Oui',
     'settings.off': 'Non',
     'settings.reset': 'Effacer mes étoiles',
-    'settings.resetConfirm': 'Effacer toutes les étoiles ?',
+    'settings.resetConfirm': 'Touche encore pour tout effacer',
     close: 'Fermer',
   },
 };
