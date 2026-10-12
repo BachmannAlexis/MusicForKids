@@ -17,7 +17,7 @@ test('A4 is 440 Hz and middle C is about 261.63 Hz', () => {
 
 test('labels follow language and naming settings', () => {
   const si = getNote('si');
-  assert.equal(noteLabel(si, { lang: 'en' }), 'Ti');
+  assert.equal(noteLabel(si, { lang: 'en' }), 'Si');
   assert.equal(noteLabel(si, { lang: 'fr' }), 'Si');
   assert.equal(noteLabel(getNote('re'), { lang: 'fr' }), 'Ré');
   assert.equal(noteLabel(si, { lang: 'fr', naming: 'letters' }), 'B');

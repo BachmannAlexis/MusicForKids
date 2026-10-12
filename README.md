@@ -1,6 +1,6 @@
 # MusicForKids 🎶
 
-A playful web app that helps children (about 4–10 years old) learn **solfège** — Do, Ré, Mi, Fa, Sol, La, Si/Ti — and the basics of music.
+A playful web app that helps children (about 4–10 years old) learn **solfège** — Do, Ré, Mi, Fa, Sol, La, Si — and the basics of music.
 It runs in any modern browser, on tablets, phones and computers, with no installation and no account.
 
 ## Activities
@@ -18,7 +18,7 @@ Children earn up to 3 ⭐ per game level and one ⭐ per song they finish. Progr
 ### Settings (⚙️)
 
 - **Language:** English or French.
-- **Note names:** solfège (Do Re Mi, with *Ti* in English and *Si* in French) or letters (C D E).
+- **Note names:** solfège (Do Re Mi … Si, in both languages) or letters (C D E).
 - **Sound** on/off, and a button to reset stars.
 
 Each note keeps the same color everywhere (classroom bell / Boomwhacker colors), so children can link color, sound, name and staff position.
