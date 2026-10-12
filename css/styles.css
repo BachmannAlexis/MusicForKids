@@ -94,6 +94,10 @@ body {
   touch-action: manipulation;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 h1,
 h2 {
   font-family: var(--font-display);
@@ -1119,6 +1123,21 @@ button {
   transform: scale(1.1);
 }
 
+.panel-extra {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* The note that gives a mode its color */
+.degree.key-note {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--c);
+}
+
+.degree.key-note:not(.played):not(.next):not(.singing) {
+  background: color-mix(in srgb, var(--c) 22%, var(--surface));
+}
+
 .status-text.small.legend {
   font-family: var(--font-body);
   font-size: 0.75rem;
@@ -1131,8 +1150,14 @@ button {
 }
 
 @media (max-width: 360px) {
+  .pickers .segmented {
+    gap: 2px;
+    padding: 3px;
+  }
+
   .pickers .segmented button {
-    font-size: 0.8rem;
+    font-size: 0.72rem;
+    padding: 0 1px;
   }
 }
 
@@ -1460,6 +1485,146 @@ button {
   height: clamp(48px, 9dvh, 72px);
 }
 
+/* Circle of fifths */
+.circle-art {
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+
+/* Keep the buttons at the bottom of the screen; the circle stays on top. */
+.circle-play > .play-footer {
+  margin-top: auto;
+}
+
+.circle-of-fifths {
+  display: block;
+  width: min(100%, 46dvh, 420px);
+  height: auto;
+  aspect-ratio: 1;
+  overflow: visible;
+}
+
+.circle-turn {
+  transform-box: view-box;
+  transform-origin: 150px 150px;
+  transition: transform 0.6s cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+
+.wedge {
+  cursor: pointer;
+  outline: none;
+}
+
+.wedge path {
+  fill: var(--surface-2);
+  stroke: var(--bg);
+  stroke-width: 1.5;
+  transition: fill 0.25s;
+}
+
+.wedge.minor path {
+  fill: color-mix(in srgb, var(--surface-2) 70%, var(--surface));
+}
+
+.wedge.dim path {
+  fill: var(--surface);
+}
+
+.wedge text {
+  fill: var(--muted);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  pointer-events: none;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.6s cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+
+.wedge.minor text {
+  font-size: 12.5px;
+}
+
+.wedge.dim text {
+  font-size: 9.5px;
+}
+
+/* The seven chords of the chosen key, each in its own color */
+.wedge.in-key path {
+  fill: var(--role);
+}
+
+.wedge.in-key text {
+  fill: #1d2040;
+}
+
+.wedge.selected path {
+  stroke: var(--text);
+  stroke-width: 2.5;
+}
+
+.wedge:focus-visible path {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.circle-center {
+  fill: var(--surface);
+  stroke: var(--line);
+}
+
+.circle-staff svg {
+  width: 112px;
+  height: 68px;
+}
+
+.circle-panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.degree-rows {
+  display: grid;
+  gap: 8px;
+}
+
+.degree-row {
+  display: grid;
+  grid-template-columns: 3.6rem repeat(7, minmax(0, 1fr));
+  align-items: center;
+  gap: 5px;
+}
+
+.degree-row-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.degree-dot {
+  aspect-ratio: 1;
+  max-height: 46px;
+  width: 100%;
+  max-width: 46px;
+  justify-self: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--role);
+  color: #1d2040;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(0.72rem, 3.2vw, 0.95rem);
+  padding: 0;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.degree-dot.selected {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--text), 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
 /* Copy-cat */
 .echo-panel {
   display: grid;
@@ -1687,7 +1852,7 @@ dialog::backdrop {
 
 /* Short screens (small phones, or any phone held sideways): tighten everything
    so each game still fits without scrolling. */
-@media (max-height: 640px) {
+@media (max-height: 700px) {
   .play {
     gap: 8px;
   }
@@ -1717,7 +1882,7 @@ dialog::backdrop {
   }
 
   .scale-panel .staff {
-    height: 58px;
+    height: 50px;
   }
 
   .stage .staff {
@@ -1726,6 +1891,10 @@ dialog::backdrop {
 
   .answer {
     min-height: 46px;
+  }
+
+  .circle-of-fifths {
+    width: min(100%, 42dvh);
   }
 
   .stage.with-staff {
@@ -1766,7 +1935,8 @@ dialog::backdrop {
     min-height: 150px;
   }
 
-  .play > :not(.instrument-area):not(.answers):not(.pad-area) {
+  /* :where() keeps this rule weak so the split layout below can place its parts. */
+  .play > :where(:not(.instrument-area, .answers, .pad-area)) {
     grid-column: 1;
   }
 
@@ -1792,6 +1962,19 @@ dialog::backdrop {
 
   .drum-pad {
     width: min(40vw, 62dvh, 220px);
+  }
+
+  .play.circle-play > .circle-art {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+  }
+
+  .play.circle-play > :not(.circle-art) {
+    grid-column: 2;
+  }
+
+  .circle-of-fifths {
+    width: min(100%, 78dvh);
   }
 
   /* Scales and interval explorer: choices and staff on the left,

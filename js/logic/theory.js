@@ -58,7 +58,14 @@ export const SCALE_TYPES = {
   major: [2, 2, 1, 2, 2, 2, 1],
   minor: [2, 1, 2, 2, 1, 2, 2],
   harmonic: [2, 1, 2, 2, 1, 3, 1],
+  // Melodic minor going up (raised 6th and 7th); going down it is the natural minor.
+  melodic: [2, 1, 2, 2, 2, 2, 1],
 };
+
+// The notes played on the way down, when they differ from the way up.
+export function descendingScale(tonicSpec, type) {
+  return buildScale(tonicSpec, type === 'melodic' ? 'minor' : type).slice().reverse();
+}
 
 // One conventional spelling per starting key, chosen to keep accidentals few.
 const MAJOR_TONICS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
@@ -231,4 +238,58 @@ export function chordName(rootLabel, type, lang = 'en') {
 // Compact chord symbol: "Ré", "Rém", "Si°", "Do+".
 export function chordSymbol(rootLabel, type) {
   return `${rootLabel}${CHORD_SYMBOL[type]}`;
+}
+
+/* ---------- Modes ---------- */
+
+// The seven modes are the major scale started on each of its degrees.
+// characteristic: index of the note that gives the mode its color (null for
+// the major and natural minor scales themselves).
+export const MODES = [
+  { id: 'ionian', degree: 0, characteristic: null },
+  { id: 'dorian', degree: 1, characteristic: 5 },
+  { id: 'phrygian', degree: 2, characteristic: 1 },
+  { id: 'lydian', degree: 3, characteristic: 3 },
+  { id: 'mixolydian', degree: 4, characteristic: 6 },
+  { id: 'aeolian', degree: 5, characteristic: null },
+  { id: 'locrian', degree: 6, characteristic: 4 },
+];
+
+const MAJOR_OFFSETS = [0, 2, 4, 5, 7, 9, 11];
+
+export function getMode(id) {
+  const mode = MODES.find((m) => m.id === id);
+  if (!mode) throw new Error(`Unknown mode: ${id}`);
+  return mode;
+}
+
+export function modeSteps(modeId) {
+  const { degree } = getMode(modeId);
+  const major = SCALE_TYPES.major;
+  return [...major.slice(degree), ...major.slice(0, degree)];
+}
+
+// A mode on any pitch class (0 = Do … 11 = Si). It is spelled with the notes
+// of its parent major scale (Ré dorien uses the notes of Do majeur), so it
+// shares that key signature. Its tonic sits between Do4 and Si4.
+export function buildMode(pitchClass, modeId) {
+  const { degree } = getMode(modeId);
+  const parentPc = (((pitchClass - MAJOR_OFFSETS[degree]) % 12) + 12) % 12;
+  const parent = MAJOR_TONICS.find((spec) => ((parseTonic(spec).midi % 12) + 12) % 12 === parentPc);
+  const source = buildScale(parent, 'major')[degree];
+  let tonic = pitch(source.letterIndex, source.alter, 4);
+  if (tonic.midi < 60) tonic = pitch(source.letterIndex, source.alter, 5);
+  if (tonic.midi > 71) tonic = pitch(source.letterIndex, source.alter, 3);
+  const notes = [tonic];
+  let semitones = 0;
+  modeSteps(modeId).forEach((step, i) => {
+    semitones += step;
+    notes.push(noteAbove(tonic, i + 2, semitones));
+  });
+  return { notes, parent };
+}
+
+// The mode on each white key of Do majeur: Do ionien, Ré dorien, Mi phrygien…
+export function whiteKeyMode(modeId) {
+  return buildMode(MAJOR_OFFSETS[getMode(modeId).degree], modeId);
 }

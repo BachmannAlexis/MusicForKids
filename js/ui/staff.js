@@ -16,15 +16,27 @@ function ledgerSteps(step) {
 
 const ACCIDENTAL = { sharp: '♯', flat: '♭', doubleSharp: '𝄪', doubleFlat: '𝄫' };
 
+// Where each sharp / flat of a key signature sits on the treble staff, in order
+// (steps from the bottom line E4): sharps F C G D A E B, flats B E A D G C F.
+const SIGNATURE_STEPS = { sharp: [8, 5, 9, 6, 3, 7, 4], flat: [4, 7, 3, 6, 2, 5, 1] };
+
 // items: [{ step, color?, accidental? }] — or { chord: [those] } for notes
 // sounding together, drawn on one stem.
-export function staffSvg(items = [], { width = 260, label = 'Music staff', startX = 110 } = {}) {
+// signature: { kind: 'sharp' | 'flat', count } draws a key signature after the clef.
+export function staffSvg(items = [], { width = 260, label = 'Music staff', startX = 110, signature = null } = {}) {
   const parts = [];
   for (let i = 0; i < 5; i++) {
     const y = TOP + i * GAP;
     parts.push(`<line x1="8" x2="${width - 8}" y1="${y}" y2="${y}" class="staff-line"/>`);
   }
   parts.push(`<text x="12" y="${BOTTOM + 12}" class="clef" font-size="${GAP * 5.4}">𝄞</text>`);
+  if (signature?.kind) {
+    SIGNATURE_STEPS[signature.kind].slice(0, signature.count).forEach((step, i) => {
+      parts.push(
+        `<text x="${60 + i * 12}" y="${stepY(step) + (signature.kind === 'flat' ? 5 : 7)}" class="accidental" font-size="${GAP * 1.45}">${ACCIDENTAL[signature.kind]}</text>`,
+      );
+    });
+  }
 
   const spacing = items.length > 1 ? (width - startX - 30) / (items.length - 1) : 0;
   items.forEach((item, i) => {

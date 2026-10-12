@@ -4,6 +4,7 @@ import {
   buildScale,
   keySignature,
   tonicsFor,
+  descendingScale,
   intervalAbove,
   intervalBetween,
   getInterval,
@@ -27,12 +28,15 @@ test('scales are spelled with one note per letter', () => {
   assert.equal(names(buildScale('F', 'major')), 'Fa Sol La Si♭ Do Ré Mi Fa');
   assert.equal(names(buildScale('A', 'minor')), 'La Si Do Ré Mi Fa Sol La');
   assert.equal(names(buildScale('A', 'harmonic')), 'La Si Do Ré Mi Fa Sol♯ La');
+  assert.equal(names(buildScale('A', 'melodic')), 'La Si Do Ré Mi Fa♯ Sol♯ La');
+  assert.equal(names(buildScale('C', 'melodic')), 'Do Ré Mi♭ Fa Sol La Si Do');
+  assert.equal(names(descendingScale('A', 'melodic')), 'La Sol Fa Mi Ré Do Si La');
   assert.equal(names(buildScale('G#', 'harmonic')), 'Sol♯ La♯ Si Do♯ Ré♯ Mi Fa♯♯ Sol♯');
   assert.equal(names(buildScale('Eb', 'major')), 'Mi♭ Fa Sol La♭ Si♭ Do Ré Mi♭');
 });
 
 test('every offered scale spans exactly one octave', () => {
-  for (const type of ['major', 'minor', 'harmonic']) {
+  for (const type of ['major', 'minor', 'harmonic', 'melodic']) {
     for (const tonic of tonicsFor(type)) {
       const scale = buildScale(tonic, type);
       assert.equal(scale.length, 8);
@@ -50,6 +54,7 @@ test('key signatures follow the order of sharps and flats', () => {
   assert.equal(names(keySignature('Bb', 'major').notes), 'Si♭ Mi♭');
   // A minor (natural or harmonic) has no sharps or flats in its signature
   assert.deepEqual(keySignature('A', 'harmonic').notes, []);
+  assert.deepEqual(keySignature('A', 'melodic').notes, []);
   assert.equal(names(keySignature('E', 'minor').notes), 'Fa♯');
 });
 
@@ -98,6 +103,48 @@ test('interval questions match their answers on every level', () => {
       }
       assert.ok(q.upper.midi <= 83, 'stays within two octaves from middle C');
       previous = q;
+    }
+  }
+});
+
+import { MODES, buildMode, whiteKeyMode, modeSteps } from '../js/logic/theory.js';
+
+test('modes on the white keys use only the notes of Do majeur', () => {
+  const expected = {
+    ionian: 'Do Ré Mi Fa Sol La Si Do',
+    dorian: 'Ré Mi Fa Sol La Si Do Ré',
+    phrygian: 'Mi Fa Sol La Si Do Ré Mi',
+    lydian: 'Fa Sol La Si Do Ré Mi Fa',
+    mixolydian: 'Sol La Si Do Ré Mi Fa Sol',
+    aeolian: 'La Si Do Ré Mi Fa Sol La',
+    locrian: 'Si Do Ré Mi Fa Sol La Si',
+  };
+  for (const mode of MODES) {
+    const { notes, parent } = whiteKeyMode(mode.id);
+    assert.equal(names(notes), expected[mode.id]);
+    assert.equal(parent, 'C');
+  }
+});
+
+test('modes on any note are spelled from their parent major scale', () => {
+  assert.equal(names(buildMode(0, 'dorian').notes), 'Do Ré Mi♭ Fa Sol La Si♭ Do');
+  assert.equal(buildMode(0, 'dorian').parent, 'Bb');
+  assert.equal(names(buildMode(2, 'lydian').notes), 'Ré Mi Fa♯ Sol♯ La Si Do♯ Ré');
+  assert.equal(names(buildMode(7, 'mixolydian').notes), 'Sol La Si Do Ré Mi Fa Sol');
+  assert.equal(names(buildMode(4, 'phrygian').notes), 'Mi Fa Sol La Si Do Ré Mi');
+});
+
+test('every mode on every note spans one octave with the right steps', () => {
+  for (const mode of MODES) {
+    for (let pc = 0; pc < 12; pc++) {
+      const { notes } = buildMode(pc, mode.id);
+      assert.equal(notes.length, 8);
+      assert.equal(notes[7].midi - notes[0].midi, 12);
+      assert.ok(notes[0].midi >= 60 && notes[0].midi <= 71, `${mode.id} ${pc}`);
+      assert.equal(((notes[0].midi % 12) + 12) % 12, pc);
+      const steps = notes.slice(1).map((n, i) => n.midi - notes[i].midi);
+      assert.deepEqual(steps, modeSteps(mode.id));
+      assert.equal(new Set(notes.slice(0, 7).map((n) => n.letter)).size, 7);
     }
   }
 });
