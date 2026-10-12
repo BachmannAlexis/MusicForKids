@@ -1,6 +1,6 @@
 import { t } from '../i18n.js';
 import { noteLabel } from '../logic/notes.js';
-import { buildScale, keySignature, tonicsFor, parseTonic, scaleId, SCALE_TYPES } from '../logic/theory.js';
+import { buildScale, descendingScale, keySignature, tonicsFor, parseTonic, scaleId, SCALE_TYPES } from '../logic/theory.js';
 import { h } from '../ui/dom.js';
 import { scaleExplorer, tonicChips, segmentedChoice } from './scale-explorer.js';
 
@@ -44,7 +44,12 @@ export function mount(root, app) {
     compute() {
       const notes = buildScale(choice.tonic, choice.type);
       const sig = keySignature(choice.tonic, choice.type);
+      const down = choice.type === 'melodic' ? descendingScale(choice.tonic, 'melodic') : null;
+      // Melodic minor: name the notes that change on the way down (e.g. Sol, Fa in La minor).
+      const changed = down?.filter((n) => !notes.some((m) => m.midi === n.midi));
       return {
+        down,
+        extra: changed?.length ? t('scale.melodic.down', { notes: changed.map(label).join(', ') }) : null,
         notes,
         steps: SCALE_TYPES[choice.type],
         title: t(`scale.name.${choice.type}`, { tonic: label(notes[0]) }),

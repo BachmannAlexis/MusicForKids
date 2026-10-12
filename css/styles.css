@@ -1150,8 +1150,14 @@ button {
 }
 
 @media (max-width: 360px) {
+  .pickers .segmented {
+    gap: 2px;
+    padding: 3px;
+  }
+
   .pickers .segmented button {
-    font-size: 0.8rem;
+    font-size: 0.72rem;
+    padding: 0 1px;
   }
 }
 
@@ -1479,6 +1485,120 @@ button {
   height: clamp(48px, 9dvh, 72px);
 }
 
+/* Circle of fifths */
+.circle-art {
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+
+/* Keep the buttons at the bottom of the screen; the circle stays on top. */
+.circle-play > .play-footer {
+  margin-top: auto;
+}
+
+.circle-of-fifths {
+  display: block;
+  width: min(100%, 46dvh, 420px);
+  height: auto;
+  aspect-ratio: 1;
+  overflow: visible;
+}
+
+.wedge {
+  cursor: pointer;
+  outline: none;
+}
+
+.wedge path {
+  fill: color-mix(in srgb, var(--c) 14%, var(--surface));
+  stroke: var(--bg);
+  stroke-width: 2;
+  transition: fill 0.15s;
+}
+
+.wedge.minor path {
+  fill: color-mix(in srgb, var(--c) 8%, var(--surface-2));
+}
+
+.wedge text {
+  fill: var(--text);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  pointer-events: none;
+}
+
+.wedge.minor text {
+  font-size: 12px;
+  fill: var(--muted);
+}
+
+.wedge.near path {
+  fill: color-mix(in srgb, var(--c) 38%, var(--surface));
+}
+
+.wedge.near text {
+  fill: var(--text);
+}
+
+.wedge.selected path {
+  fill: var(--c);
+}
+
+.wedge.selected text {
+  fill: var(--ink);
+}
+
+.wedge:focus-visible path {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.wedge:hover path {
+  filter: brightness(0.97);
+}
+
+.circle-center {
+  fill: var(--surface);
+  stroke: var(--line);
+}
+
+.center-big {
+  fill: var(--text);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 30px;
+}
+
+.center-small {
+  fill: var(--muted);
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.circle-info {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.signature-staff .staff {
+  width: 130px;
+  height: auto;
+}
+
+@media (max-width: 380px) {
+  .circle-info {
+    grid-template-columns: 1fr;
+  }
+
+  .signature-staff {
+    display: none;
+  }
+}
+
 /* Copy-cat */
 .echo-panel {
   display: grid;
@@ -1706,7 +1826,7 @@ dialog::backdrop {
 
 /* Short screens (small phones, or any phone held sideways): tighten everything
    so each game still fits without scrolling. */
-@media (max-height: 640px) {
+@media (max-height: 700px) {
   .play {
     gap: 8px;
   }
@@ -1812,6 +1932,19 @@ dialog::backdrop {
 
   .drum-pad {
     width: min(40vw, 62dvh, 220px);
+  }
+
+  .play.circle-play > .circle-art {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+  }
+
+  .play.circle-play > :not(.circle-art) {
+    grid-column: 2;
+  }
+
+  .circle-of-fifths {
+    width: min(100%, 78dvh);
   }
 
   /* Scales and interval explorer: choices and staff on the left,

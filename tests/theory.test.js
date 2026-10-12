@@ -4,6 +4,7 @@ import {
   buildScale,
   keySignature,
   tonicsFor,
+  descendingScale,
   intervalAbove,
   intervalBetween,
   getInterval,
@@ -27,12 +28,15 @@ test('scales are spelled with one note per letter', () => {
   assert.equal(names(buildScale('F', 'major')), 'Fa Sol La Si♭ Do Ré Mi Fa');
   assert.equal(names(buildScale('A', 'minor')), 'La Si Do Ré Mi Fa Sol La');
   assert.equal(names(buildScale('A', 'harmonic')), 'La Si Do Ré Mi Fa Sol♯ La');
+  assert.equal(names(buildScale('A', 'melodic')), 'La Si Do Ré Mi Fa♯ Sol♯ La');
+  assert.equal(names(buildScale('C', 'melodic')), 'Do Ré Mi♭ Fa Sol La Si Do');
+  assert.equal(names(descendingScale('A', 'melodic')), 'La Sol Fa Mi Ré Do Si La');
   assert.equal(names(buildScale('G#', 'harmonic')), 'Sol♯ La♯ Si Do♯ Ré♯ Mi Fa♯♯ Sol♯');
   assert.equal(names(buildScale('Eb', 'major')), 'Mi♭ Fa Sol La♭ Si♭ Do Ré Mi♭');
 });
 
 test('every offered scale spans exactly one octave', () => {
-  for (const type of ['major', 'minor', 'harmonic']) {
+  for (const type of ['major', 'minor', 'harmonic', 'melodic']) {
     for (const tonic of tonicsFor(type)) {
       const scale = buildScale(tonic, type);
       assert.equal(scale.length, 8);
@@ -50,6 +54,7 @@ test('key signatures follow the order of sharps and flats', () => {
   assert.equal(names(keySignature('Bb', 'major').notes), 'Si♭ Mi♭');
   // A minor (natural or harmonic) has no sharps or flats in its signature
   assert.deepEqual(keySignature('A', 'harmonic').notes, []);
+  assert.deepEqual(keySignature('A', 'melodic').notes, []);
   assert.equal(names(keySignature('E', 'minor').notes), 'Fa♯');
 });
 

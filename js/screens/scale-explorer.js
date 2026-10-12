@@ -15,7 +15,8 @@ const STEP_LABEL = { 1: '½', 2: 'T', 3: '1½' };
 // down) and "Your turn" (play it going up for a star).
 // config: {
 //   pickers: elements shown above the panel,
-//   compute() → { notes, steps, title, sub, extra?, legend, highlight?, progressId },
+//   compute() → { notes, steps, title, sub, extra?, legend, highlight?, progressId, down? },
+//   (down: the notes played going back down, when they differ — melodic minor)
 //   onProgress() → called after a star so pickers can show it,
 // }
 export function scaleExplorer(root, app, config) {
@@ -67,7 +68,8 @@ export function scaleExplorer(root, app, config) {
     degreeRow.replaceChildren(...degrees);
 
     instrument?.destroy();
-    const spellings = new Map(notes.map((n) => [n.midi, n]));
+    // Keys used going up or down are named in the scale's spelling; the others are faded.
+    const spellings = new Map([...(current.down ?? []), ...notes].map((n) => [n.midi, n]));
     const keys = keyboardRange(notes[0].midi, notes[7].midi);
     instrument = createInstrument({
       settings: app.settings,
@@ -133,7 +135,8 @@ export function scaleExplorer(root, app, config) {
     position = -1;
     mark();
     // Up and back down, like a scale is practised.
-    const items = [...notes, ...notes.slice(0, -1).reverse()].map((note) => ({ note, beats: 1 }));
+    const down = current.down ? current.down.slice(1) : notes.slice(0, -1).reverse();
+    const items = [...notes, ...down].map((note) => ({ note, beats: 1 }));
     listenButton.replaceChildren(icon('stop'), t('songs.stop'));
     instrument.setDisabled(true);
     stopMelody = playMelody(items, {
@@ -141,7 +144,7 @@ export function scaleExplorer(root, app, config) {
       onNote: (i) => {
         const note = items[i].note;
         instrument.flash(note);
-        degrees.forEach((d, j) => d.classList.toggle('singing', notes[j] === note));
+        degrees.forEach((d, j) => d.classList.toggle('singing', notes[j].midi === note.midi));
       },
       onEnd: () => {
         stopMelody = null;

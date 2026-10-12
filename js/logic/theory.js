@@ -58,7 +58,14 @@ export const SCALE_TYPES = {
   major: [2, 2, 1, 2, 2, 2, 1],
   minor: [2, 1, 2, 2, 1, 2, 2],
   harmonic: [2, 1, 2, 2, 1, 3, 1],
+  // Melodic minor going up (raised 6th and 7th); going down it is the natural minor.
+  melodic: [2, 1, 2, 2, 2, 2, 1],
 };
+
+// The notes played on the way down, when they differ from the way up.
+export function descendingScale(tonicSpec, type) {
+  return buildScale(tonicSpec, type === 'melodic' ? 'minor' : type).slice().reverse();
+}
 
 // One conventional spelling per starting key, chosen to keep accidentals few.
 const MAJOR_TONICS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];

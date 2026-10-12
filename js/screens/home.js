@@ -11,6 +11,7 @@ const GAMES = [
   { id: 'modes', icon: 'compass', color: '#00897b' },
   { id: 'intervals', icon: 'interval', color: '#d81b60' },
   { id: 'chords', icon: 'chord', color: '#1e88e5' },
+  { id: 'circle', icon: 'circle5', color: '#6d4c9f' },
   { id: 'rhythms', icon: 'drum', color: '#f4511e' },
   { id: 'echo', icon: 'repeat', color: '#00acc1' },
   { id: 'songs', icon: 'music', color: '#3949ab' },

@@ -13,6 +13,7 @@ import * as scales from './screens/scales.js';
 import * as modes from './screens/modes.js';
 import * as intervals from './screens/intervals.js';
 import * as chords from './screens/chords.js';
+import * as circle from './screens/circle.js';
 import * as rhythms from './screens/rhythms.js';
 
 const ROUTES = {
@@ -26,6 +27,7 @@ const ROUTES = {
   modes: (root, app) => modes.mount(root, app),
   intervals: (root, app, params) => intervals.mount(root, app, params),
   chords: (root, app, params) => chords.mount(root, app, params),
+  circle: (root, app, params) => circle.mount(root, app, params),
   rhythms: (root, app, params) => rhythms.mount(root, app, params),
 };
 

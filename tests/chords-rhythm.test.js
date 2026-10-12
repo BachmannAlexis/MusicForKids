@@ -27,10 +27,11 @@ test('degree chords in minor keys', () => {
   assert.deepEqual(diatonicChords('A', 'minor').map((c) => c.roman), ['i', 'ii°', 'III', 'iv', 'v', 'VI', 'VII']);
   assert.deepEqual(diatonicChords('A', 'harmonic').map((c) => c.roman), ['i', 'ii°', 'III+', 'iv', 'V', 'VI', 'vii°']);
   assert.equal(names(diatonicChords('A', 'harmonic')[4].notes), 'Mi Sol♯ Si');
+  assert.deepEqual(diatonicChords('A', 'melodic').map((c) => c.roman), ['i', 'ii', 'III+', 'IV', 'V', 'vi°', 'vii°']);
 });
 
 test('every key gives seven well-formed chords that fit the staff', () => {
-  for (const type of ['major', 'minor', 'harmonic']) {
+  for (const type of ['major', 'minor', 'harmonic', 'melodic']) {
     for (const tonic of tonicsFor(type)) {
       for (const chord of diatonicChords(tonic, type)) {
         assert.ok(chord.type, `${tonic} ${type} ${chord.roman}`);
