@@ -3,13 +3,15 @@ import { getNote } from '../logic/notes.js';
 import { ECHO_POOL, createEcho, addNote, play, echoStars } from '../logic/echo.js';
 import { recordBest } from '../logic/progress.js';
 import { playMelody, playSuccess, playOops } from '../audio.js';
-import { h, starsText } from '../ui/dom.js';
+import { h, starsRow } from '../ui/dom.js';
+import { icon } from '../ui/icons.js';
 import { celebrate } from '../ui/celebrate.js';
 import { createInstrument } from '../ui/instrument.js';
 
 const LIVES = 3;
 
 export function mount(root, app) {
+  app.setBar({ title: t('game.echo'), back: '' });
   let state = createEcho();
   let lives = LIVES;
   let stopMelody = null;
@@ -22,8 +24,10 @@ export function mount(root, app) {
     timers.add(id);
   };
 
-  const status = h('p', { class: 'question', 'aria-live': 'polite' });
-  const info = h('p', { class: 'echo-info' });
+  const status = h('p', { class: 'status-text', 'aria-live': 'polite' });
+  const hearts = h('span', { class: 'hearts', role: 'img' });
+  const length = h('span', { class: 'stat' });
+  const best = h('span', { class: 'stat' });
   const instrument = createInstrument({
     settings: app.settings,
     notes: ECHO_POOL.map(getNote),
@@ -31,13 +35,23 @@ export function mount(root, app) {
   });
   instrument.setDisabled(true);
 
-  const startButton = h('button', { class: 'btn big-play', onclick: start }, '▶️ ', t('echo.start'));
-  const actions = h('div', { class: 'actions' }, startButton);
+  const actions = h('div', { class: 'play-footer' });
 
   function renderInfo() {
-    info.textContent = `${'❤️'.repeat(lives)}${'🤍'.repeat(LIVES - lives)}  ·  ${t('echo.length', {
-      n: state.sequence.length,
-    })}  ·  ${t('echo.best', { n: state.best })}`;
+    hearts.replaceChildren(
+      ...Array.from({ length: LIVES }, (_, i) => {
+        const heart = icon('heart');
+        heart.classList.toggle('on', i < lives);
+        return heart;
+      }),
+    );
+    hearts.setAttribute('aria-label', `${lives} / ${LIVES}`);
+    length.textContent = t('echo.length', { n: state.sequence.length });
+    best.textContent = t('echo.best', { n: state.best });
+  }
+
+  function startButton(label) {
+    return h('button', { class: 'btn wide', type: 'button', onclick: start }, icon(label === 'start' ? 'play' : 'restart'), t(label === 'start' ? 'echo.start' : 'playAgain'));
   }
 
   function start() {
@@ -96,14 +110,23 @@ export function mount(root, app) {
     const stars = echoStars(state.best);
     app.updateProgress((p) => recordBest(p, 'echo', stars));
     if (stars > 0) celebrate();
-    status.textContent = t('finished');
-    info.textContent = `${starsText(stars)}  ·  ${t('echo.best', { n: state.best })}`;
-    actions.replaceChildren(h('button', { class: 'btn big-play', onclick: start }, '🔁 ', t('playAgain')));
+    status.replaceChildren(t('finished'), ' ', starsRow(stars));
+    renderInfo();
+    actions.replaceChildren(startButton('again'));
   }
 
   status.textContent = t('game.echo.desc');
   renderInfo();
-  root.append(h('h2', {}, '🦜 ', t('game.echo')), status, info, instrument.el, actions);
+  actions.append(startButton('start'));
+  root.append(
+    h(
+      'div',
+      { class: 'play' },
+      h('div', { class: 'panel echo-panel' }, status, h('div', { class: 'echo-stats' }, hearts, length, best)),
+      h('div', { class: 'instrument-area' }, instrument.el),
+      actions,
+    ),
+  );
 
   return () => {
     stopMelody?.();

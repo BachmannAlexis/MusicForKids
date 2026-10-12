@@ -38,6 +38,23 @@ const spell = (k, [name, letter, step], accidental) => ({
 export const BLACK_NOTES = BLACK_KEYS.map((k) => spell(k, k.sharp, 'sharp'));
 const FLAT_NOTES = BLACK_KEYS.map((k) => spell(k, k.flat, 'flat'));
 
+// Text color that stays readable on a note's color: white on dark colors,
+// dark ink on light ones (yellow, orange…), using WCAG contrast against white.
+function luminance(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+export function inkFor(color) {
+  const contrastWithWhite = 1.05 / (luminance(color) + 0.05);
+  return contrastWithWhite >= 3 ? '#ffffff' : '#1d2040';
+}
+
+for (const note of [...NOTES, ...BLACK_NOTES, ...FLAT_NOTES]) note.ink = inkFor(note.color);
+
 // All keys of the piano keyboard from C4 to C5, in pitch order.
 export const PIANO_NOTES = [...NOTES, ...BLACK_NOTES].sort((a, b) => a.midi - b.midi);
 

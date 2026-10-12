@@ -2,6 +2,7 @@
 
 A playful web app that helps children (about 4–10 years old) learn **solfège** — Do, Ré, Mi, Fa, Sol, La, Si — and the basics of music.
 It runs in any modern browser, on tablets, phones and computers, with no installation and no account.
+It is designed phone-first: every game fits on one screen (portrait or landscape) with no scrolling, and it can be added to the home screen like an app (it has a web app manifest and icons).
 
 ## Activities
 
@@ -58,7 +59,9 @@ js/
   storage.js        saves settings and stars in localStorage
   logic/            pure game rules (tested)
   screens/          one module per activity
-  ui/               xylophone/piano, staff drawing, helpers
+  ui/               xylophone/piano, staff drawing, icons, helpers
+icons/              app icons (home screen)
+manifest.webmanifest
 tests/
 ```
 

@@ -17,7 +17,7 @@ export function createInstrument({ settings, kind = settings.instrument, onPress
       'button',
       {
         class: className,
-        style: { '--key-color': note.color, ...style },
+        style: { '--key-color': note.color, '--ink': note.ink, ...style },
         'aria-label': label,
         onpointerdown: (e) => {
           e.preventDefault();

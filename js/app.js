@@ -3,6 +3,7 @@ import { load, save } from './storage.js';
 import { setSoundEnabled } from './audio.js';
 import { emptyProgress, totalStars } from './logic/progress.js';
 import { h } from './ui/dom.js';
+import { icon } from './ui/icons.js';
 import * as home from './screens/home.js';
 import * as explore from './screens/explore.js';
 import * as quiz from './screens/quiz.js';
@@ -22,6 +23,12 @@ const saved = load();
 const app = {
   settings: saved.settings,
   progress: saved.progress,
+  // Each screen names itself in the top bar: { title, back } (back = route to return to).
+  bar: null,
+  setBar(bar) {
+    app.bar = bar;
+    renderHeader();
+  },
   updateProgress(fn) {
     app.progress = fn(app.progress);
     persist();
@@ -48,13 +55,27 @@ function applySettings() {
 }
 
 function renderHeader() {
+  const bar = app.bar;
+  const start = bar
+    ? [
+        h('a', { class: 'icon-btn ghost', href: `#/${bar.back}`, 'aria-label': t('back') }, icon('back')),
+        h('h1', { class: 'bar-title' }, bar.title),
+      ]
+    : [
+        h('a', { class: 'brand', href: '#/' }, h('span', { class: 'brand-mark' }, icon('logo')), h('span', {}, t('title'))),
+      ];
   header.replaceChildren(
-    h('a', { class: 'logo', href: '#/' }, h('span', { 'aria-hidden': 'true' }, '🎶 '), t('title')),
+    h('div', { class: 'bar-start' }, start),
     h(
       'div',
-      { class: 'header-right' },
-      h('span', { class: 'star-count', title: t('stars') }, `⭐ ${totalStars(app.progress)}`),
-      h('button', { class: 'icon-btn', 'aria-label': t('settings'), onclick: openSettings }, '⚙️'),
+      { class: 'bar-end' },
+      h(
+        'span',
+        { class: 'star-pill', role: 'img', 'aria-label': `${totalStars(app.progress)} ${t('stars')}` },
+        icon('star'),
+        String(totalStars(app.progress)),
+      ),
+      h('button', { class: 'icon-btn ghost', type: 'button', 'aria-label': t('settings'), onclick: openSettings }, icon('settings')),
     ),
   );
 }
@@ -62,12 +83,14 @@ function renderHeader() {
 function render() {
   cleanup?.();
   cleanup = null;
+  app.bar = null;
   const [route = '', ...params] = currentPath.split('/');
   const mountRoute = ROUTES[route] ?? ROUTES[''];
   main.replaceChildren();
   main.className = `screen screen-${route || 'home'}`;
   cleanup = mountRoute(main, app, params) ?? null;
-  window.scrollTo(0, 0);
+  renderHeader();
+  main.scrollTop = 0;
 }
 
 function choice(label, current, options, onPick) {
@@ -75,16 +98,20 @@ function choice(label, current, options, onPick) {
     'fieldset',
     { class: 'choice' },
     h('legend', {}, label),
-    options.map(([value, text]) =>
-      h(
-        'button',
-        {
-          type: 'button',
-          class: value === current ? 'selected' : '',
-          'aria-pressed': String(value === current),
-          onclick: () => onPick(value),
-        },
-        text,
+    h(
+      'div',
+      { class: 'segmented' },
+      options.map(([value, text]) =>
+        h(
+          'button',
+          {
+            type: 'button',
+            class: value === current ? 'selected' : '',
+            'aria-pressed': String(value === current),
+            onclick: () => onPick(value),
+          },
+          text,
+        ),
       ),
     ),
   );
@@ -100,7 +127,6 @@ function changeSetting(key, value) {
   app.settings = { ...app.settings, [key]: value };
   persist();
   applySettings();
-  renderHeader();
   renderSettings();
   render();
 }
@@ -111,7 +137,8 @@ function renderSettings() {
     h(
       'form',
       { method: 'dialog', class: 'settings' },
-      h('h2', {}, '⚙️ ', t('settings')),
+      h('div', { class: 'sheet-handle', 'aria-hidden': 'true' }),
+      h('h2', {}, t('settings')),
       choice(t('settings.lang'), s.lang, [['en', 'English'], ['fr', 'Français']], (v) => changeSetting('lang', v)),
       choice(
         t('settings.naming'),
@@ -126,8 +153,8 @@ function renderSettings() {
         t('settings.instrument'),
         s.instrument,
         [
-          ['xylophone', `🎨 ${t('settings.xylophone')}`],
-          ['piano', `🎹 ${t('settings.piano')}`],
+          ['xylophone', t('settings.xylophone')],
+          ['piano', t('settings.piano')],
         ],
         (v) => changeSetting('instrument', v),
       ),
@@ -135,38 +162,45 @@ function renderSettings() {
         t('settings.sound'),
         s.sound,
         [
-          [true, `🔊 ${t('settings.on')}`],
-          [false, `🔇 ${t('settings.off')}`],
+          [true, t('settings.on')],
+          [false, t('settings.off')],
         ],
         (v) => changeSetting('sound', v),
       ),
       h(
-        'button',
-        {
-          type: 'button',
-          class: `btn secondary small${confirmingReset ? ' danger' : ''}`,
-          onclick: () => {
-            if (!confirmingReset) {
-              confirmingReset = true;
+        'div',
+        { class: 'settings-actions' },
+        h(
+          'button',
+          {
+            type: 'button',
+            class: `btn text${confirmingReset ? ' danger' : ''}`,
+            onclick: () => {
+              if (!confirmingReset) {
+                confirmingReset = true;
+                renderSettings();
+                return;
+              }
+              confirmingReset = false;
+              app.updateProgress(() => emptyProgress());
               renderSettings();
-              return;
-            }
-            confirmingReset = false;
-            app.updateProgress(() => emptyProgress());
-            renderSettings();
-            render();
+              render();
+            },
           },
-        },
-        '🗑 ',
-        confirmingReset ? t('settings.resetConfirm') : t('settings.reset'),
+          icon('trash'),
+          confirmingReset ? t('settings.resetConfirm') : t('settings.reset'),
+        ),
+        h('button', { class: 'btn', value: 'close' }, t('close')),
       ),
-      h('button', { class: 'btn', value: 'close' }, t('close')),
     ),
   );
 }
 
-applySettings();
-renderHeader();
+// Tapping the dimmed backdrop closes the settings sheet.
+dialog.addEventListener('click', (e) => {
+  if (e.target === dialog) dialog.close();
+});
+
 function go(path) {
   currentPath = path;
   try {
@@ -190,4 +224,6 @@ const syncFromLocation = () => {
 };
 window.addEventListener('hashchange', syncFromLocation);
 window.addEventListener('popstate', syncFromLocation);
+
+applySettings();
 render();
