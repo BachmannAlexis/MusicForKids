@@ -143,12 +143,39 @@ export function rhythmSvg(pattern, { width = 320, label = 'Rhythm', results = nu
   return `<svg class="rhythm-staff" viewBox="0 0 ${width} 96" role="img" aria-label="${label}">${parts.join('')}</svg>`;
 }
 
-// One note value (or a short group) on its own, for the "note values" cards.
-export function figureSvg(pattern) {
-  const svg = rhythmSvg(pattern, { width: 140, beats: Math.max(pattern.beats, 1), numbers: false, label: '', left: 4 });
-  // Drop the time signature and closing bar line: this is a single figure, not a bar.
-  return svg
-    .replace(/<text x="10"[^>]*class="time-sig">4<\/text>/g, '')
-    .replace(/<line x1="134"[^>]*\/>/, '')
-    .replace('viewBox="0 0 140 96"', 'viewBox="0 8 140 62"');
+// One note value (or a short group) on its own, for the "note values" cards,
+// centred in the card: the figure's ink (head, stem, dot, flag) is measured and
+// the whole group is placed in the middle.
+export function figureSvg(pattern, { width = 140 } = {}) {
+  const gap = 34;
+  const xs = pattern.events.map((_, i) => i * gap);
+  // Left / right extent of each event's drawing, relative to its x.
+  const extent = (e) => {
+    if (e.rest) return [-8, 8];
+    const right = e.symbol === 'hd' || e.symbol === 'qd' ? 17.5 : e.symbol === 'e' && !e.beamed ? 15 : e.symbol === 'w' ? 7.5 : 7;
+    return [-7.5, right];
+  };
+  const left = Math.min(...pattern.events.map((e, i) => xs[i] + extent(e)[0]));
+  const right = Math.max(...pattern.events.map((e, i) => xs[i] + extent(e)[1]));
+  const shift = width / 2 - (left + right) / 2;
+  const at = (i) => xs[i] + shift;
+
+  const parts = [`<line x1="6" x2="${width - 6}" y1="${LINE_Y}" y2="${LINE_Y}" class="staff-line"/>`];
+  pattern.events.forEach((e, i) => {
+    const cx = at(i);
+    if (e.rest) {
+      parts.push(rest(e.symbol, cx));
+      return;
+    }
+    parts.push(head(cx, e.symbol === 'w' || e.symbol === 'h' || e.symbol === 'hd'));
+    if (e.symbol !== 'w') parts.push(stem(cx));
+    if (e.symbol === 'hd' || e.symbol === 'qd') parts.push(dot(cx));
+    if (e.symbol === 'e' && e.beamed === 'start') {
+      parts.push(`<rect x="${cx + 5.6}" y="${LINE_Y - 37}" width="${at(i + 1) - cx + 2}" height="5" class="r-fill"/>`);
+    }
+    if (e.symbol === 'e' && !e.beamed) {
+      parts.push(`<path d="M${cx + 6.6} ${LINE_Y - 36} c2 8 12 10 8 22 c0 -8 -4 -12 -8 -14z" class="r-fill"/>`);
+    }
+  });
+  return `<svg class="rhythm-staff" viewBox="0 8 ${width} 62" role="img" aria-label="">${parts.join('')}</svg>`;
 }

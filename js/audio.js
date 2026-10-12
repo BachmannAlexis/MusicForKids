@@ -190,3 +190,29 @@ export function playRhythm(hits, bpm, { leadIn = 0.15 } = {}) {
   const latency = ac ? (ac.outputLatency || ac.baseLatency || 0) : 0;
   return performance.now() + (leadIn + latency) * 1000;
 }
+
+// A chord progression, chord by chord (bass + upper voices together), calling
+// onChord(index) as each one sounds. Returns stop(), like playMelody.
+export function playProgression(chords, { seconds = 1.1, onChord = () => {}, onEnd = () => {} } = {}) {
+  const timers = [];
+  chords.forEach((chord, i) => {
+    timers.push(
+      setTimeout(() => {
+        const last = i === chords.length - 1;
+        const length = last ? seconds * 1.6 : seconds * 0.95;
+        if (chord.bass) tone(frequency(chord.bass.midi), { duration: length, volume: 0.24 });
+        chord.notes.forEach((n) => tone(frequency(n.midi), { duration: length, volume: 0.18 }));
+        onChord(i);
+      }, i * seconds * 1000),
+    );
+  });
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    timers.forEach(clearTimeout);
+    onEnd();
+  };
+  timers.push(setTimeout(finish, (chords.length - 1) * seconds * 1000 + seconds * 1600));
+  return finish;
+}
