@@ -68,6 +68,13 @@ export function playNote(note, duration = 0.6) {
   tone(frequency(note.midi), { duration });
 }
 
+// The reference Do, then the mystery note: lets children who don't have perfect
+// pitch find a note by comparing it with Do.
+export function playWithReference(reference, note) {
+  tone(frequency(reference.midi), { duration: 0.5, volume: 0.28 });
+  tone(frequency(note.midi), { start: 0.85, duration: 0.9 });
+}
+
 // An interval: the two notes one after the other, then together.
 export function playInterval(lower, upper) {
   tone(frequency(lower.midi), { duration: 0.5 });

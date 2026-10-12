@@ -1625,6 +1625,37 @@ button {
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--text), 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
+/* Ears: answers played on the keyboard */
+.answers.custom {
+  display: flex;
+  height: clamp(150px, 30dvh, 260px);
+}
+
+.answers.custom > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.bar.dim {
+  filter: saturate(0.15) opacity(0.4);
+}
+
+.bar.dim .key-label {
+  opacity: 0.6;
+}
+
+.listen-controls {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+}
+
+.reference-btn {
+  min-height: 40px;
+  padding: 0 16px;
+  font-size: 0.9rem;
+}
+
 /* Copy-cat */
 .echo-panel {
   display: grid;
@@ -1905,6 +1936,19 @@ dialog::backdrop {
     width: 36px;
     height: 36px;
     padding: 9px;
+  }
+
+  .listen-controls .listen-btn .icon {
+    width: 64px;
+    height: 64px;
+  }
+
+  .listen-controls {
+    gap: 8px;
+  }
+
+  .answers.custom {
+    height: clamp(120px, 28dvh, 200px);
   }
 }
 

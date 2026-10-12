@@ -57,3 +57,21 @@ export function starsFor(firstTry, total = ROUNDS_PER_GAME) {
   if (ratio >= 0.4) return 1;
   return 0;
 }
+
+// The order of the notes for one game: each note comes up as often as the
+// others (±1), in random order, and never twice in a row — plain random
+// picks can leave one note (say Mi) almost absent from a 10-question game.
+export function roundPlan(pool, rounds = ROUNDS_PER_GAME, rng = Math.random) {
+  const used = Object.fromEntries(pool.map((id) => [id, 0]));
+  const plan = [];
+  for (let i = 0; i < rounds; i++) {
+    const previous = plan[i - 1];
+    const candidates = pool.length > 1 ? pool.filter((id) => id !== previous) : pool;
+    const least = Math.min(...candidates.map((id) => used[id]));
+    const options = candidates.filter((id) => used[id] === least);
+    const id = options[Math.floor(rng() * options.length)];
+    used[id] += 1;
+    plan.push(id);
+  }
+  return plan;
+}

@@ -58,3 +58,27 @@ test('stars thresholds', () => {
   assert.equal(starsFor(4), 1);
   assert.equal(starsFor(3), 0);
 });
+
+import { roundPlan } from '../js/logic/quiz.js';
+
+test('every note comes up about equally often, never twice in a row', () => {
+  for (const level of LEVELS) {
+    for (let game = 0; game < 200; game++) {
+      const plan = roundPlan(level.pool);
+      assert.equal(plan.length, ROUNDS_PER_GAME);
+      const counts = level.pool.map((id) => plan.filter((p) => p === id).length);
+      assert.ok(Math.max(...counts) - Math.min(...counts) <= 1, `${level.id}: ${counts}`);
+      for (let i = 1; i < plan.length; i++) assert.notEqual(plan[i], plan[i - 1]);
+    }
+  }
+  // Do-Mi-Sol: Mi appears 3 or 4 times in every game.
+  for (let game = 0; game < 200; game++) {
+    const mi = roundPlan(['do', 'mi', 'sol']).filter((id) => id === 'mi').length;
+    assert.ok(mi === 3 || mi === 4);
+  }
+});
+
+test('the order changes from game to game', () => {
+  const orders = new Set(Array.from({ length: 50 }, () => roundPlan(['do', 'mi', 'sol']).join(',')));
+  assert.ok(orders.size > 20);
+});

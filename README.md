@@ -9,8 +9,10 @@ It is designed phone-first: every game fits on one screen (portrait or landscape
 | | Activity | What children learn |
 |---|---|---|
 | 🎹 | **Discover** | Play a colorful xylophone or a piano with black keys; each note shows its name and its place on the staff, with ♯ for black keys. |
-| 👂 | **Ears** | Hear a note and find its name (ear training), in 3 levels: Do-Mi-Sol → Do…Sol → full scale. |
+| 👂 | **Ears** | Hear Do as a reference, then a mystery note, and play it on the keyboard (xylophone or piano): ear training by comparing, no perfect pitch needed. A button replays Do at any time; keys that are not answers in the level are faded but still sound. 3 levels: Do-Mi-Sol → Do…Sol → full scale. |
 | 🎼 | **Read** | Read a note on the treble staff and name it, in the same 3 levels. |
+
+In Ears and Read, every note of the level comes up equally often in each 10-question game (in random order, never twice in a row).
 | 🪜 | **Scales** (Gammes) | Major, natural minor, harmonic minor and melodic minor scales starting on any of the 12 notes, correctly spelled (Ré majeur: Fa♯ Do♯; Sol♯ mineur harmonique: Fa♯♯). Melodic minor goes up with a raised 6th and 7th and comes back down as the natural minor. Shows the key signature, the scale on the staff and the tones (T) and semitones (½) between notes; listen to it, then play it on the piano for a ⭐. |
 | 🧭 | **Modes** | The seven modes (ionien, dorien, phrygien, lydien, mixolydien, éolien, locrien), plus harmonic and melodic minor (on La in Do, with their raised notes ringed), either on the white keys in Do (Ré dorien, Mi phrygien…) or all from the same note to compare them. Each shows its parent major scale, its mood, its tones and semitones, and rings the note that gives it its color (the bright sixth of dorien, the raised fourth of lydien…); listen to it, then play it for a ⭐. |
 | 🎯 | **Intervals** | Explore every interval from the minor second to the octave above any note (with the number of semitones), then 4 games: third/fifth/octave in Do, second to octave in Do, major/minor/perfect from any note, and by ear only. |
