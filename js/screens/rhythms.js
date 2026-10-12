@@ -1,5 +1,5 @@
 import { t, cheer } from '../i18n.js';
-import { FIGURES, RHYTHM_LEVELS, getRhythmLevel, parsePattern, patternsUpTo, noteEvents, gradePresses, rhythmStars } from '../logic/rhythm.js';
+import { FIGURES, RHYTHM_LEVELS, getRhythmLevel, parsePattern, patternsUpTo, noteEvents, gradePresses, learnOffset, rhythmStars } from '../logic/rhythm.js';
 import { recordBest } from '../logic/progress.js';
 import { playRhythm, holdNote, playSuccess } from '../audio.js';
 import { h, starsRow } from '../ui/dom.js';
@@ -286,7 +286,10 @@ function tapGame(root, app, level) {
     pad.classList.remove('live');
     // A finger still down at the end counts as let go now.
     if (held) lift(performance.now());
-    const result = gradePresses(noteEvents(pattern, level.bpm), presses);
+    // Taps are corrected for this phone's sound delay, learned from earlier tries.
+    const offset = app.settings.rhythmOffset ?? 0;
+    const result = gradePresses(noteEvents(pattern, level.bpm), presses, { offset });
+    app.setSetting('rhythmOffset', learnOffset(offset, result.results));
     presses = null;
     busy = false;
     best = Math.max(best, result.score);

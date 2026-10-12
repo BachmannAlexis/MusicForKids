@@ -103,3 +103,20 @@ test('long notes must be held, short notes can be tapped', () => {
   const missed = gradePresses(notes, [{ down: 2000, up: 2100 }]);
   assert.deepEqual(missed.results.map((r) => r.grade), ['miss', 'perfect', 'miss']);
 });
+
+import { learnOffset } from '../js/logic/rhythm.js';
+
+test('the phone delay is learned from the taps and corrected', () => {
+  const notes = noteEvents(parsePattern('q q q q'), 60);
+  // A phone that plays sound 180 ms late: the child taps right with what they hear.
+  const late = notes.map((n) => ({ down: n.time + 180, up: n.time + 260 }));
+  let offset = 0;
+  const first = gradePresses(notes, late, { offset });
+  assert.ok(first.results.every((r) => r.grade === 'good'));
+  for (let i = 0; i < 4; i++) offset = learnOffset(offset, gradePresses(notes, late, { offset }).results);
+  assert.ok(offset > 150 && offset <= 180, `offset ${offset}`);
+  assert.equal(gradePresses(notes, late, { offset }).score, 1);
+  // It never runs away with real mistakes.
+  const veryLate = notes.map((n) => ({ down: n.time + 2000, up: n.time + 2100 }));
+  assert.ok(learnOffset(offset, gradePresses(notes, veryLate, { offset }).results) <= 350);
+});

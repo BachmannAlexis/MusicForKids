@@ -137,6 +137,7 @@ function percussion(kind, start, out) {
     note: { from: 950, to: 620, volume: 0.5, length: 0.12, type: 'sine' },
     tick: { from: 1500, to: 1400, volume: 0.12, length: 0.04, type: 'square' },
     accent: { from: 2000, to: 1900, volume: 0.16, length: 0.05, type: 'square' },
+    drum: { from: 190, to: 60, volume: 0.75, length: 0.22, type: 'sine' },
   }[kind];
   osc.type = settings.type;
   osc.frequency.setValueAtTime(settings.from, t0);
@@ -213,10 +214,12 @@ export function playRhythm(hits, bpm, { leadIn = 0.15 } = {}) {
 export function holdNote(midi = 67) {
   const ac = context();
   if (!ac) return () => {};
+  // A drum hit for the attack, then a soft held note underneath for the length.
+  percussion('drum', 0);
   const t0 = ac.currentTime;
   const gain = ac.createGain();
   gain.gain.setValueAtTime(0.0001, t0);
-  gain.gain.exponentialRampToValueAtTime(0.24, t0 + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.13, t0 + 0.03);
   gain.connect(ac.destination);
   const oscillators = [[1, 1], [2, 0.3], [3, 0.12]].map(([mult, level]) => {
     const osc = ac.createOscillator();
