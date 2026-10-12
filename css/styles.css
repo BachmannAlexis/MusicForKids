@@ -1505,49 +1505,63 @@ button {
   overflow: visible;
 }
 
+.circle-turn {
+  transform-box: view-box;
+  transform-origin: 150px 150px;
+  transition: transform 0.6s cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+
 .wedge {
   cursor: pointer;
   outline: none;
 }
 
 .wedge path {
-  fill: color-mix(in srgb, var(--c) 14%, var(--surface));
+  fill: var(--surface-2);
   stroke: var(--bg);
-  stroke-width: 2;
-  transition: fill 0.15s;
+  stroke-width: 1.5;
+  transition: fill 0.25s;
 }
 
 .wedge.minor path {
-  fill: color-mix(in srgb, var(--c) 8%, var(--surface-2));
+  fill: color-mix(in srgb, var(--surface-2) 70%, var(--surface));
+}
+
+.wedge.dim path {
+  fill: var(--surface);
 }
 
 .wedge text {
-  fill: var(--text);
+  fill: var(--muted);
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 15px;
+  font-size: 16px;
   pointer-events: none;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.6s cubic-bezier(0.3, 0.7, 0.3, 1);
 }
 
 .wedge.minor text {
-  font-size: 12px;
-  fill: var(--muted);
+  font-size: 12.5px;
 }
 
-.wedge.near path {
-  fill: color-mix(in srgb, var(--c) 38%, var(--surface));
+.wedge.dim text {
+  font-size: 9.5px;
 }
 
-.wedge.near text {
-  fill: var(--text);
+/* The seven chords of the chosen key, each in its own color */
+.wedge.in-key path {
+  fill: var(--role);
+}
+
+.wedge.in-key text {
+  fill: #1d2040;
 }
 
 .wedge.selected path {
-  fill: var(--c);
-}
-
-.wedge.selected text {
-  fill: var(--ink);
+  stroke: var(--text);
+  stroke-width: 2.5;
 }
 
 .wedge:focus-visible path {
@@ -1555,48 +1569,60 @@ button {
   stroke-width: 3;
 }
 
-.wedge:hover path {
-  filter: brightness(0.97);
-}
-
 .circle-center {
   fill: var(--surface);
   stroke: var(--line);
 }
 
-.center-big {
-  fill: var(--text);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 30px;
+.circle-staff svg {
+  width: 112px;
+  height: 68px;
 }
 
-.center-small {
-  fill: var(--muted);
-  font-weight: 700;
-  font-size: 11px;
-}
-
-.circle-info {
+.circle-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
+  gap: 10px;
+  padding: 12px;
+}
+
+.degree-rows {
+  display: grid;
   gap: 8px;
 }
 
-.signature-staff .staff {
-  width: 130px;
-  height: auto;
+.degree-row {
+  display: grid;
+  grid-template-columns: 3.6rem repeat(7, minmax(0, 1fr));
+  align-items: center;
+  gap: 5px;
 }
 
-@media (max-width: 380px) {
-  .circle-info {
-    grid-template-columns: 1fr;
-  }
+.degree-row-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+}
 
-  .signature-staff {
-    display: none;
-  }
+.degree-dot {
+  aspect-ratio: 1;
+  max-height: 46px;
+  width: 100%;
+  max-width: 46px;
+  justify-self: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--role);
+  color: #1d2040;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(0.72rem, 3.2vw, 0.95rem);
+  padding: 0;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.degree-dot.selected {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--text), 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 /* Copy-cat */
@@ -1865,6 +1891,10 @@ dialog::backdrop {
 
   .answer {
     min-height: 46px;
+  }
+
+  .circle-of-fifths {
+    width: min(100%, 42dvh);
   }
 
   .stage.with-staff {

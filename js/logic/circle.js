@@ -1,4 +1,4 @@
-import { buildScale, keySignature } from './theory.js';
+import { buildScale, diatonicChords, keySignature } from './theory.js';
 
 // Major keys around the circle of fifths, clockwise from C at the top: each
 // step adds a sharp (or removes a flat). Position 6 is F# = Gb.
@@ -60,3 +60,45 @@ export function circleQuestion(level, previous = null, rng = Math.random) {
   return { key, answerId: nameOf(key), options };
 }
 
+
+// Where each chord of a key sits around its key on the circle: ring and offset
+// (-1 = one step counter-clockwise, 0 = same spoke, +1 = clockwise).
+// In a major key: IV I V outside, ii vi iii in the middle, vii° inside.
+const MAJOR_PLACES = [
+  { ring: 'major', offset: 0 }, // I
+  { ring: 'minor', offset: -1 }, // ii
+  { ring: 'minor', offset: 1 }, // iii
+  { ring: 'major', offset: -1 }, // IV
+  { ring: 'major', offset: 1 }, // V
+  { ring: 'minor', offset: 0 }, // vi
+  { ring: 'dim', offset: 0 }, // vii°
+];
+// The relative minor uses the same seven wedges: i ii° III iv v VI VII.
+const MINOR_PLACES = [
+  { ring: 'minor', offset: 0 }, // i
+  { ring: 'dim', offset: 0 }, // ii°
+  { ring: 'major', offset: 0 }, // III
+  { ring: 'minor', offset: -1 }, // iv
+  { ring: 'minor', offset: 1 }, // v
+  { ring: 'major', offset: -1 }, // VI
+  { ring: 'major', offset: 1 }, // VII
+];
+
+// The diminished chord on each spoke is the vii° of that spoke's major key.
+export function diminishedRoot(index) {
+  const major = CIRCLE[((index % 12) + 12) % 12];
+  return specOf(buildScale(major, 'major')[6]);
+}
+
+// The seven chords of the key at `index` (major, or its relative minor), each
+// with its wedge on the circle: { degree, roman, type, notes, ring, index }.
+export function circleChords(index, mode = 'major') {
+  const key = circleKey(index);
+  const chords = mode === 'major' ? diatonicChords(key.major, 'major') : diatonicChords(key.minor, 'minor');
+  const places = mode === 'major' ? MAJOR_PLACES : MINOR_PLACES;
+  return chords.map((chord, i) => ({
+    ...chord,
+    ring: places[i].ring,
+    index: (((index + places[i].offset) % 12) + 12) % 12,
+  }));
+}
