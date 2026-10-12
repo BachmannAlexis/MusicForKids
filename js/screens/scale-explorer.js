@@ -15,7 +15,7 @@ const STEP_LABEL = { 1: '½', 2: 'T', 3: '1½' };
 // down) and "Your turn" (play it going up for a star).
 // config: {
 //   pickers: elements shown above the panel,
-//   compute() → { notes, steps, title, sub, extra?, legend, highlight?, progressId, down? },
+//   compute() → { notes, steps, title, sub, extra?, legend, highlight? (index or indexes), progressId, down? },
 //   (down: the notes played going back down, when they differ — melodic minor)
 //   onProgress() → called after a star so pickers can show it,
 // }
@@ -58,7 +58,7 @@ export function scaleExplorer(root, app, config) {
       h(
         'span',
         {
-          class: `degree${highlight === i ? ' key-note' : ''}`,
+          class: `degree${[].concat(highlight ?? []).includes(i) ? ' key-note' : ''}`,
           style: { '--c': note.color, '--ink': note.ink },
           'data-step': i < 7 ? STEP_LABEL[steps[i]] : null,
         },

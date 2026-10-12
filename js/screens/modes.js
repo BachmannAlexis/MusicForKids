@@ -1,6 +1,6 @@
 import { t } from '../i18n.js';
 import { noteLabel } from '../logic/notes.js';
-import { MODES, buildMode, whiteKeyMode, modeSteps, parseTonic, getMode } from '../logic/theory.js';
+import { ALL_MODES, buildMode, whiteKeyMode, modeSteps, parseTonic, getMode, keySignature, descendingScale } from '../logic/theory.js';
 import { h } from '../ui/dom.js';
 import { scaleExplorer, tonicChips, segmentedChoice } from './scale-explorer.js';
 
@@ -24,7 +24,7 @@ export function mount(root, app) {
     tonicChips(
       modeBar,
       // In C, each mode chip carries the color of the white key it starts on.
-      MODES.map((m) => ({ key: m.id, note: build(m.id).notes[0], text: cap(t(`mode.${m.id}`)) })),
+      ALL_MODES.map((m) => ({ key: m.id, note: build(m.id).notes[0], text: cap(t(`mode.${m.id}`)) })),
       {
         selected: choice.mode,
         done: (id) => app.progress.scales?.[`mode-${pcOf(build(id).notes[0])}-${id}`],
@@ -57,10 +57,26 @@ export function mount(root, app) {
     pickers: [modeBar, tonicBar],
     onProgress: renderPickers,
     compute() {
-      const { notes, parent } = current();
+      const { notes, parent, minor } = current();
       const mode = getMode(choice.mode);
       const tonic = label(notes[0]);
       const keyNote = mode.characteristic;
+      if (mode.scale) {
+        // Harmonic / melodic minor: the minor key's signature, its raised notes ringed.
+        const sig = keySignature(minor, 'minor');
+        const raised = keyNote.map((i) => label(notes[i])).join(', ');
+        return {
+          notes,
+          steps: modeSteps(choice.mode),
+          down: mode.scale === 'melodic' ? descendingScale(minor, 'melodic') : null,
+          title: t(`scale.name.${mode.scale}`, { tonic }),
+          sub: sig.notes.length ? t('scale.signature', { list: sig.notes.map(label).join(' ') }) : t('scale.signature.none'),
+          extra: t(`mode.mood.${choice.mode}`),
+          highlight: keyNote,
+          legend: t(mode.scale === 'harmonic' ? 'mode.legend.harmonic' : 'mode.legend.melodic', { notes: raised }),
+          progressId: progressId(),
+        };
+      }
       return {
         notes,
         steps: modeSteps(choice.mode),
