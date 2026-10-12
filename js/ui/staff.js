@@ -14,10 +14,10 @@ function ledgerSteps(step) {
   return steps;
 }
 
-const ACCIDENTAL = { sharp: '♯', flat: '♭' };
+const ACCIDENTAL = { sharp: '♯', flat: '♭', doubleSharp: '𝄪', doubleFlat: '𝄫' };
 
 // notes: [{ step, color?, accidental? }]
-export function staffSvg(notes = [], { width = 260, label = 'Music staff' } = {}) {
+export function staffSvg(notes = [], { width = 260, label = 'Music staff', startX = 110 } = {}) {
   const parts = [];
   for (let i = 0; i < 5; i++) {
     const y = TOP + i * GAP;
@@ -25,7 +25,6 @@ export function staffSvg(notes = [], { width = 260, label = 'Music staff' } = {}
   }
   parts.push(`<text x="12" y="${BOTTOM + 12}" class="clef" font-size="${GAP * 5.4}">𝄞</text>`);
 
-  const startX = 110;
   const spacing = notes.length > 1 ? (width - startX - 30) / (notes.length - 1) : 0;
   notes.forEach((n, i) => {
     const x = notes.length > 1 ? startX + i * spacing : (width + 70) / 2;
@@ -39,7 +38,7 @@ export function staffSvg(notes = [], { width = 260, label = 'Music staff' } = {}
     const stemEnd = up ? y - 3.5 * GAP : y + 3.5 * GAP;
     parts.push(`<line x1="${stemX}" x2="${stemX}" y1="${y}" y2="${stemEnd}" class="stem"/>`);
     if (n.accidental) {
-      parts.push(`<text x="${x - 30}" y="${y + 8}" class="accidental" font-size="${GAP * 1.6}">${ACCIDENTAL[n.accidental]}</text>`);
+      parts.push(`<text x="${x - 14}" y="${y + 7}" class="accidental" text-anchor="end" font-size="${GAP * 1.45}">${ACCIDENTAL[n.accidental]}</text>`);
     }
     parts.push(
       `<ellipse cx="${x}" cy="${y}" rx="10.5" ry="7.5" transform="rotate(-20 ${x} ${y})" fill="${fill}" class="note-head"/>`,

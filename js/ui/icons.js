@@ -20,6 +20,11 @@ const PATHS = {
     '<path d="M2 6h20M2 10h20M2 14h20M2 18h20" opacity=".45"/>' +
     '<ellipse class="fill" cx="10" cy="16" rx="3.2" ry="2.3" transform="rotate(-20 10 16)"/><path d="M13 15.5V4"/>',
   repeat: '<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
+  stairs: '<path d="M3 20h5v-4h4v-4h4V8h5"/><path d="M21 4v4"/>',
+  interval:
+    '<ellipse class="fill" cx="7" cy="17.5" rx="3.2" ry="2.3" transform="rotate(-20 7 17.5)"/>' +
+    '<ellipse class="fill" cx="17" cy="7" rx="3.2" ry="2.3" transform="rotate(-20 17 7)"/>' +
+    '<path d="M10 15l4.5-5" stroke-dasharray="1.5 2.5"/>',
   music: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
   heart: '<path class="fill" d="M12 20.5S3 15 3 8.8A4.8 4.8 0 0 1 12 6.4a4.8 4.8 0 0 1 9 2.4C21 15 12 20.5 12 20.5z"/>',
   logo:

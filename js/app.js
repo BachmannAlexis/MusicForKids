@@ -9,6 +9,8 @@ import * as explore from './screens/explore.js';
 import * as quiz from './screens/quiz.js';
 import * as echo from './screens/echo.js';
 import * as songs from './screens/songs.js';
+import * as scales from './screens/scales.js';
+import * as intervals from './screens/intervals.js';
 
 const ROUTES = {
   '': (root, app) => home.mount(root, app),
@@ -17,6 +19,8 @@ const ROUTES = {
   read: (root, app, params) => quiz.mount(root, app, params, 'read'),
   echo: (root, app) => echo.mount(root, app),
   songs: (root, app, params) => songs.mount(root, app, params),
+  scales: (root, app) => scales.mount(root, app),
+  intervals: (root, app, params) => intervals.mount(root, app, params),
 };
 
 const saved = load();

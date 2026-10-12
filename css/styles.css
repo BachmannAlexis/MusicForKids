@@ -548,7 +548,7 @@ button {
 
 .instrument-area {
   flex: 1 1 auto;
-  min-height: 170px;
+  min-height: 150px;
   max-height: 340px;
   display: flex;
 }
@@ -990,6 +990,238 @@ button {
   flex: 1 1 140px;
 }
 
+/* Scales and intervals */
+.pickers {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.chip-scroller {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 2px 4px;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+
+.chip-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.tonic {
+  flex: none;
+  position: relative;
+  min-width: 48px;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 2px solid var(--c);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 800;
+  font-size: 0.9rem;
+  scroll-snap-align: center;
+}
+
+.tonic.selected {
+  background: var(--c);
+  color: var(--ink);
+}
+
+.tonic.done::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--star);
+  border: 2px solid var(--bg);
+}
+
+.scale-panel {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+}
+
+.panel-head {
+  display: grid;
+  gap: 1px;
+}
+
+.panel-head.with-action {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-title {
+  font-size: 1.1rem;
+}
+
+.panel-sub {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.scale-panel .staff {
+  height: clamp(76px, 14dvh, 130px);
+}
+
+.degrees {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 4px;
+  padding-bottom: 16px;
+}
+
+.degree {
+  position: relative;
+  padding: 3px 0;
+  border-radius: 999px;
+  border: 2px solid var(--c);
+  font-weight: 800;
+  font-size: clamp(0.66rem, 2.9vw, 0.9rem);
+  text-align: center;
+  white-space: nowrap;
+  transition: background 0.15s, transform 0.15s;
+}
+
+/* Tone / semitone between two neighbouring degrees */
+.degree[data-step]::after {
+  content: attr(data-step);
+  position: absolute;
+  left: 100%;
+  top: 100%;
+  transform: translate(-50%, 2px);
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--muted);
+  margin-left: 2px;
+}
+
+.degree.played {
+  background: var(--c);
+  color: var(--ink);
+  opacity: 0.5;
+}
+
+.degree.next,
+.degree.singing {
+  background: var(--c);
+  color: var(--ink);
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.status-text.small.legend {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.pickers .segmented button {
+  font-size: 0.92rem;
+}
+
+@media (max-width: 360px) {
+  .pickers .segmented button {
+    font-size: 0.8rem;
+  }
+}
+
+.status-text.small.good {
+  color: var(--good);
+}
+
+.interval-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.interval-grid button {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.interval-grid button.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.icon-btn.tonal {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.row.feature {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+}
+
+.row.feature > .icon {
+  transform: rotate(180deg);
+  color: var(--muted);
+}
+
+.section-title {
+  font-size: 1.1rem;
+  margin-top: 6px;
+}
+
+.stage.with-staff {
+  align-content: center;
+  gap: 10px;
+}
+
+.stage.with-staff .listen-btn {
+  flex-direction: row;
+  gap: 8px;
+}
+
+.stage.with-staff .listen-btn .icon {
+  width: 44px;
+  height: 44px;
+  padding: 11px;
+  box-shadow: 0 0 0 5px var(--accent-soft);
+}
+
+.answer.plain {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 -4px 0 var(--line);
+  font-size: clamp(0.9rem, 3.8vw, 1.15rem);
+}
+
+.piano-key.white.dim {
+  background: linear-gradient(180deg, var(--key-white) 76%, var(--surface-2) 76%);
+}
+
+.piano-key.black.dim {
+  background: var(--key-black);
+}
+
+.piano-key.dim .key-label {
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+.piano-key.black.dim .key-label {
+  opacity: 0;
+}
+
 /* Copy-cat */
 .echo-panel {
   display: grid;
@@ -1130,6 +1362,10 @@ dialog::backdrop {
 .segmented button {
   flex: 1 1 0;
   min-width: 0;
+  padding: 0 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   min-height: 40px;
   border: 0;
   border-radius: 9px;
@@ -1211,6 +1447,60 @@ dialog::backdrop {
   to { transform: translate(var(--drift), 110vh) rotate(var(--spin)); }
 }
 
+/* Short screens (small phones, or any phone held sideways): tighten everything
+   so each game still fits without scrolling. */
+@media (max-height: 640px) {
+  .play {
+    gap: 8px;
+  }
+
+  .instrument-area {
+    min-height: 108px;
+  }
+
+  .btn {
+    min-height: 44px;
+  }
+
+  .tonic {
+    height: 34px;
+  }
+
+  .segmented button {
+    min-height: 34px;
+  }
+
+  .pickers {
+    gap: 6px;
+  }
+
+  .scale-panel {
+    padding: 8px 10px;
+  }
+
+  .scale-panel .staff {
+    height: 58px;
+  }
+
+  .stage .staff {
+    height: clamp(72px, 18dvh, 120px);
+  }
+
+  .answer {
+    min-height: 46px;
+  }
+
+  .stage.with-staff {
+    gap: 4px;
+  }
+
+  .stage.with-staff .listen-btn .icon {
+    width: 36px;
+    height: 36px;
+    padding: 9px;
+  }
+}
+
 /* Phones held sideways: put the instrument beside the rest of the screen. */
 @media (orientation: landscape) and (max-height: 500px) {
   :root {
@@ -1257,6 +1547,34 @@ dialog::backdrop {
     height: clamp(80px, 34dvh, 140px);
   }
 
+  .stage.with-staff .staff {
+    height: clamp(64px, 24dvh, 110px);
+  }
+
+  /* Scales and interval explorer: choices and staff on the left,
+     keyboard with its buttons on the right. */
+  .play.split {
+    grid-template-areas: 'pick inst' 'panel inst' 'panel foot';
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .play.split > .pickers {
+    grid-area: pick;
+  }
+
+  .play.split > .scale-panel {
+    grid-area: panel;
+    align-self: start;
+  }
+
+  .play.split > .instrument-area {
+    grid-area: inst;
+  }
+
+  .play.split > .play-footer {
+    grid-area: foot;
+  }
+
   .listen-btn .icon {
     width: 72px;
     height: 72px;
@@ -1267,7 +1585,7 @@ dialog::backdrop {
   }
 
   .cards {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .card:first-child {

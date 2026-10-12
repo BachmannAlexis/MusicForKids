@@ -30,7 +30,8 @@ export function mount(root, app) {
   const best = h('span', { class: 'stat' });
   const instrument = createInstrument({
     settings: app.settings,
-    notes: ECHO_POOL.map(getNote),
+    // The xylophone shows only the five notes of the game; the piano keeps all its keys.
+    notes: app.settings.instrument === 'piano' ? undefined : ECHO_POOL.map(getNote),
     onPress: handle,
   });
   instrument.setDisabled(true);

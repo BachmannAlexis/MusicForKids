@@ -49,6 +49,14 @@ export function playNote(note, duration = 0.6) {
   tone(frequency(note.midi), { duration });
 }
 
+// An interval: the two notes one after the other, then together.
+export function playInterval(lower, upper) {
+  tone(frequency(lower.midi), { duration: 0.5 });
+  tone(frequency(upper.midi), { start: 0.55, duration: 0.5 });
+  tone(frequency(lower.midi), { start: 1.25, duration: 0.9, volume: 0.25 });
+  tone(frequency(upper.midi), { start: 1.25, duration: 0.9, volume: 0.25 });
+}
+
 // Plays [{ note, beats }] and calls onNote(index) as each note sounds.
 // Returns a stop() function; `done` resolves when the melody ends or is stopped.
 export function playMelody(items, { bpm = 110, onNote = () => {}, onEnd = () => {} } = {}) {

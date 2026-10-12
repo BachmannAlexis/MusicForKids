@@ -34,6 +34,12 @@ const spell = (k, [name, letter, step], accidental) => ({
   black: true,
 });
 
+// Color of each pitch class (0 = Do … 11 = Si), shared by every octave.
+export const PITCH_COLORS = [
+  '#e53935', '#f4511e', '#fb8c00', '#f9a825', '#fdd835', '#43a047',
+  '#00897b', '#00acc1', '#1e88e5', '#3949ab', '#6d4c9f', '#8e24aa',
+];
+
 // Sharps are the default spelling for black keys (what the keyboard shows).
 export const BLACK_NOTES = BLACK_KEYS.map((k) => spell(k, k.sharp, 'sharp'));
 const FLAT_NOTES = BLACK_KEYS.map((k) => spell(k, k.flat, 'flat'));
@@ -58,7 +64,7 @@ for (const note of [...NOTES, ...BLACK_NOTES, ...FLAT_NOTES]) note.ink = inkFor(
 // All keys of the piano keyboard from C4 to C5, in pitch order.
 export const PIANO_NOTES = [...NOTES, ...BLACK_NOTES].sort((a, b) => a.midi - b.midi);
 
-const ACCIDENTAL = { sharp: '♯', flat: '♭' };
+const ACCIDENTAL = { sharp: '♯', flat: '♭', doubleSharp: '♯♯', doubleFlat: '♭♭' };
 
 const SOLFEGE = {
   en: { do: 'Do', re: 'Re', mi: 'Mi', fa: 'Fa', sol: 'Sol', la: 'La', si: 'Si' },
