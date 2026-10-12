@@ -94,6 +94,10 @@ body {
   touch-action: manipulation;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 h1,
 h2 {
   font-family: var(--font-display);
@@ -1119,6 +1123,21 @@ button {
   transform: scale(1.1);
 }
 
+.panel-extra {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* The note that gives a mode its color */
+.degree.key-note {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--c);
+}
+
+.degree.key-note:not(.played):not(.next):not(.singing) {
+  background: color-mix(in srgb, var(--c) 22%, var(--surface));
+}
+
 .status-text.small.legend {
   font-family: var(--font-body);
   font-size: 0.75rem;
@@ -1717,7 +1736,7 @@ dialog::backdrop {
   }
 
   .scale-panel .staff {
-    height: 58px;
+    height: 50px;
   }
 
   .stage .staff {
@@ -1766,7 +1785,8 @@ dialog::backdrop {
     min-height: 150px;
   }
 
-  .play > :not(.instrument-area):not(.answers):not(.pad-area) {
+  /* :where() keeps this rule weak so the split layout below can place its parts. */
+  .play > :where(:not(.instrument-area, .answers, .pad-area)) {
     grid-column: 1;
   }
 

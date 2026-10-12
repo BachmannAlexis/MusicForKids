@@ -12,13 +12,14 @@ It is designed phone-first: every game fits on one screen (portrait or landscape
 | 👂 | **Ears** | Hear a note and find its name (ear training), in 3 levels: Do-Mi-Sol → Do…Sol → full scale. |
 | 🎼 | **Read** | Read a note on the treble staff and name it, in the same 3 levels. |
 | 🪜 | **Scales** (Gammes) | Major, natural minor and harmonic minor scales starting on any of the 12 notes, correctly spelled (Ré majeur: Fa♯ Do♯; Sol♯ mineur harmonique: Fa♯♯). Shows the key signature, the scale on the staff and the tones (T) and semitones (½) between notes; listen to it, then play it on the piano for a ⭐. |
+| 🧭 | **Modes** | The seven modes (ionien, dorien, phrygien, lydien, mixolydien, éolien, locrien), either on the white keys in Do (Ré dorien, Mi phrygien…) or all from the same note to compare them. Each shows its parent major scale, its mood, its tones and semitones, and rings the note that gives it its color (the bright sixth of dorien, the raised fourth of lydien…); listen to it, then play it for a ⭐. |
 | 🎯 | **Intervals** | Explore every interval from the minor second to the octave above any note (with the number of semitones), then 4 games: third/fifth/octave in Do, second to octave in Do, major/minor/perfect from any note, and by ear only. |
 | 🎹 | **Chords** (Accords) | The seven chords of any major or minor key (I, ii, iii, IV, V, vi, vii°), each shown on the staff and keyboard, plus the I–IV–V–I cadence; a chord builder (major, minor, diminished, augmented on any note, explained as stacked thirds); 4 games: major or minor, four kinds of chords, by ear only, and degrees in Do. |
 | 🥁 | **Rhythms** (Rythmes) | The note values and rests (ronde, blanche, noire, croches, pointées, soupir…) with their beats; *Tap the rhythm*: after a count-in, tap a 4/4 bar on the drum and see each note graded on time / close / missed; *Which rhythm?*: hear a rhythm and pick its notation. 4 levels each. |
 | 🦜 | **Copy-cat** | Repeat a melody that grows one note at a time (musical memory). 3 lives. |
 | 🎵 | **Songs** | Play 13 real songs note by note, guided by the glowing key: the Do Re Mi ladder, Hot Cross Buns, Mary Had a Little Lamb, Twinkle Twinkle (Ah ! vous dirai-je, maman), Au clair de la lune, Frère Jacques, London Bridge, Old MacDonald, Row Your Boat, Lightly Row, Jingle Bells (Vive le vent), Ode to Joy and Happy Birthday. |
 
-Children earn up to 3 ⭐ per game level, one ⭐ per song they finish and one ⭐ per scale they play. Progress is saved in the browser.
+Children earn up to 3 ⭐ per game level, one ⭐ per song they finish and one ⭐ per scale or mode they play. Progress is saved in the browser.
 
 ### Settings (⚙️)
 

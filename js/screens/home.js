@@ -8,6 +8,7 @@ const GAMES = [
   { id: 'listen', icon: 'ear', color: '#fb8c00' },
   { id: 'read', icon: 'staff', color: '#43a047' },
   { id: 'scales', icon: 'stairs', color: '#8e24aa' },
+  { id: 'modes', icon: 'compass', color: '#00897b' },
   { id: 'intervals', icon: 'interval', color: '#d81b60' },
   { id: 'chords', icon: 'chord', color: '#1e88e5' },
   { id: 'rhythms', icon: 'drum', color: '#f4511e' },

@@ -101,3 +101,45 @@ test('interval questions match their answers on every level', () => {
     }
   }
 });
+
+import { MODES, buildMode, whiteKeyMode, modeSteps } from '../js/logic/theory.js';
+
+test('modes on the white keys use only the notes of Do majeur', () => {
+  const expected = {
+    ionian: 'Do Ré Mi Fa Sol La Si Do',
+    dorian: 'Ré Mi Fa Sol La Si Do Ré',
+    phrygian: 'Mi Fa Sol La Si Do Ré Mi',
+    lydian: 'Fa Sol La Si Do Ré Mi Fa',
+    mixolydian: 'Sol La Si Do Ré Mi Fa Sol',
+    aeolian: 'La Si Do Ré Mi Fa Sol La',
+    locrian: 'Si Do Ré Mi Fa Sol La Si',
+  };
+  for (const mode of MODES) {
+    const { notes, parent } = whiteKeyMode(mode.id);
+    assert.equal(names(notes), expected[mode.id]);
+    assert.equal(parent, 'C');
+  }
+});
+
+test('modes on any note are spelled from their parent major scale', () => {
+  assert.equal(names(buildMode(0, 'dorian').notes), 'Do Ré Mi♭ Fa Sol La Si♭ Do');
+  assert.equal(buildMode(0, 'dorian').parent, 'Bb');
+  assert.equal(names(buildMode(2, 'lydian').notes), 'Ré Mi Fa♯ Sol♯ La Si Do♯ Ré');
+  assert.equal(names(buildMode(7, 'mixolydian').notes), 'Sol La Si Do Ré Mi Fa Sol');
+  assert.equal(names(buildMode(4, 'phrygian').notes), 'Mi Fa Sol La Si Do Ré Mi');
+});
+
+test('every mode on every note spans one octave with the right steps', () => {
+  for (const mode of MODES) {
+    for (let pc = 0; pc < 12; pc++) {
+      const { notes } = buildMode(pc, mode.id);
+      assert.equal(notes.length, 8);
+      assert.equal(notes[7].midi - notes[0].midi, 12);
+      assert.ok(notes[0].midi >= 60 && notes[0].midi <= 71, `${mode.id} ${pc}`);
+      assert.equal(((notes[0].midi % 12) + 12) % 12, pc);
+      const steps = notes.slice(1).map((n, i) => n.midi - notes[i].midi);
+      assert.deepEqual(steps, modeSteps(mode.id));
+      assert.equal(new Set(notes.slice(0, 7).map((n) => n.letter)).size, 7);
+    }
+  }
+});

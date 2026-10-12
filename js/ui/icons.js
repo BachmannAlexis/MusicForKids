@@ -30,6 +30,7 @@ const PATHS = {
     '<ellipse class="fill" cx="9" cy="12.5" rx="3.2" ry="2.3" transform="rotate(-20 9 12.5)"/>' +
     '<ellipse class="fill" cx="9" cy="7" rx="3.2" ry="2.3" transform="rotate(-20 9 7)"/><path d="M12 17.5V2.5"/>',
   drum: '<ellipse cx="12" cy="9" rx="8" ry="3"/><path d="M4 9v7c0 1.7 3.6 3 8 3s8-1.3 8-3V9"/><path d="m5 3 6 5M19 3l-6 5"/>',
+  compass: '<circle cx="12" cy="12" r="9"/><path class="fill" d="m15.8 8.2-2.3 5.3-5.3 2.3 2.3-5.3z"/>',
   music: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
   heart: '<path class="fill" d="M12 20.5S3 15 3 8.8A4.8 4.8 0 0 1 12 6.4a4.8 4.8 0 0 1 9 2.4C21 15 12 20.5 12 20.5z"/>',
   logo:
