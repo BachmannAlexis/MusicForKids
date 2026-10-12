@@ -20,8 +20,9 @@ const ACCIDENTAL = { sharp: '♯', flat: '♭', doubleSharp: '𝄪', doubleFlat:
 // (steps from the bottom line E4): sharps F C G D A E B, flats B E A D G C F.
 const SIGNATURE_STEPS = { sharp: [8, 5, 9, 6, 3, 7, 4], flat: [4, 7, 3, 6, 2, 5, 1] };
 
-// items: [{ step, color?, accidental? }] — or { chord: [those] } for notes
-// sounding together, drawn on one stem.
+// items: [{ step, color?, accidental?, beats? }] — or { chord: [those] } for
+// notes sounding together, drawn on one stem. beats gives the note's shape:
+// 4 = whole (white, no stem), 2-3 = half (white), 1.5 / 3 dotted, < 1 eighth (flag).
 // signature: { kind: 'sharp' | 'flat', count } draws a key signature after the clef.
 export function staffSvg(items = [], { width = 260, label = 'Music staff', startX = 110, signature = null } = {}) {
   const parts = [];
@@ -53,7 +54,21 @@ export function staffSvg(items = [], { width = 260, label = 'Music staff', start
     const stemX = up ? x + 9.5 : x - 9.5;
     const from = up ? stepY(low) : stepY(high);
     const to = up ? stepY(high) - 3.5 * GAP : stepY(low) + 3.5 * GAP;
-    parts.push(`<line x1="${stemX}" x2="${stemX}" y1="${from}" y2="${to}" class="stem"/>`);
+    const beats = item.beats ?? notes[0].beats ?? 1;
+    const ink = notes[0].color ?? 'currentColor';
+    if (beats < 4) parts.push(`<line x1="${stemX}" x2="${stemX}" y1="${from}" y2="${to}" class="stem" style="stroke:${ink}"/>`);
+    if (beats < 1) {
+      // A single flag at the end of the stem.
+      const dir = up ? 1 : -1;
+      parts.push(
+        `<path d="M${stemX} ${to} c${dir * 0 + 2} ${dir * 8} 13 ${dir * 11} 9 ${dir * 24} c0 ${-dir * 8} -4 ${-dir * 12} -9 ${-dir * 14}z" style="fill:${ink}"/>`,
+      );
+    }
+    if (beats === 1.5 || beats === 3) {
+      const y = stepY(high);
+      const dotY = Math.abs(high) % 2 === 0 ? y - GAP / 2 : y; // dots sit in a space
+      parts.push(`<circle cx="${x + 17}" cy="${dotY}" r="2.6" style="fill:${ink}"/>`);
+    }
 
     // Accidentals of a chord step left in turn so they don't collide.
     let column = 0;
@@ -67,8 +82,12 @@ export function staffSvg(items = [], { width = 260, label = 'Music staff', start
     }
     for (const n of notes) {
       const y = stepY(n.step);
+      const hollow = (item.beats ?? n.beats ?? 1) >= 2;
+      const color = n.color ?? 'currentColor';
       parts.push(
-        `<ellipse cx="${x}" cy="${y}" rx="10.5" ry="7.5" transform="rotate(-20 ${x} ${y})" fill="${n.color ?? 'currentColor'}" class="note-head"/>`,
+        hollow
+          ? `<ellipse cx="${x}" cy="${y}" rx="10" ry="7" transform="rotate(-20 ${x} ${y})" class="note-head" style="fill:var(--surface);stroke:${color};stroke-width:3"/>`
+          : `<ellipse cx="${x}" cy="${y}" rx="10.5" ry="7.5" transform="rotate(-20 ${x} ${y})" class="note-head" style="fill:${color}"/>`,
       );
     }
   });

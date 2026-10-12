@@ -32,7 +32,8 @@ export function mount(root, app) {
       type: 'button',
       onclick: () => {
         stopMelody?.();
-        const items = NOTES.map((note) => ({ note, beats: 1 }));
+        // Up the scale and back down.
+        const items = [...NOTES, ...NOTES.slice(0, -1).reverse()].map((note) => ({ note, beats: 1 }));
         stopMelody = playMelody(items, {
           bpm: 120,
           onNote: (i) => {

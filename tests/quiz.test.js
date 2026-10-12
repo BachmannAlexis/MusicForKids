@@ -82,3 +82,31 @@ test('the order changes from game to game', () => {
   const orders = new Set(Array.from({ length: 50 }, () => roundPlan(['do', 'mi', 'sol']).join(',')));
   assert.ok(orders.size > 20);
 });
+
+import { EAR_LEVELS, READ_LEVELS, highReadingNotes, accidentalQuestion } from '../js/logic/quiz.js';
+import { noteLabel } from '../js/logic/notes.js';
+
+test('new Ears and Read levels', () => {
+  assert.equal(EAR_LEVELS.length, 5);
+  assert.equal(READ_LEVELS.length, 5);
+  for (const level of EAR_LEVELS) level.pool.forEach((id) => getNote(id));
+  assert.equal(EAR_LEVELS[3].pool.filter((id) => getNote(id).black).length, 5);
+  const high = highReadingNotes();
+  assert.equal(high.length, 13);
+  assert.equal(noteLabel(high.at(-1), { lang: 'fr' }), 'La');
+  assert.equal(high.at(-1).midi, 81);
+});
+
+test('sharp and flat questions always offer the right answer among 4', () => {
+  let previous = null;
+  for (let i = 0; i < 300; i++) {
+    const q = accidentalQuestion(previous);
+    assert.ok(q.target.alter !== 0);
+    assert.ok(!['Mi♯', 'Si♯', 'Do♭', 'Fa♭'].includes(noteLabel(q.target, { lang: 'fr' })));
+    assert.equal(q.options.length, 4);
+    assert.ok(q.options.includes(q.target));
+    assert.equal(new Set(q.options.map((o) => noteLabel(o, { lang: 'fr' }))).size, 4);
+    assert.notEqual(q.target.id, previous);
+    previous = q.target.id;
+  }
+});

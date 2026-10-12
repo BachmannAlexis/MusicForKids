@@ -7,6 +7,7 @@ import { h, starsRow } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
 import { celebrate } from '../ui/celebrate.js';
 import { createInstrument } from '../ui/instrument.js';
+import { staffSvg } from '../ui/staff.js';
 
 export function mount(root, app, [songId]) {
   if (!songId || !SONGS.some((s) => s.id === songId)) {
@@ -66,6 +67,61 @@ export function mount(root, app, [songId]) {
     ),
   );
   const status = h('p', { class: 'status-text small', 'aria-live': 'polite' }, t('songs.hint'));
+  // Two ways to show the song: colored name bubbles, or a real score (one
+  // phrase at a time, with note lengths) that the child reads without help.
+  const score = h('div', { class: 'score-art' });
+  const viewBar = h('div', { class: 'segmented view-switch', role: 'group', 'aria-label': t('songs.view') });
+  const scoreMode = () => app.settings.songView === 'score';
+
+  function renderViewBar() {
+    viewBar.replaceChildren(
+      ...[
+        ['bubbles', t('songs.view.bubbles')],
+        ['score', t('songs.view.score')],
+      ].map(([value, text]) =>
+        h(
+          'button',
+          {
+            type: 'button',
+            class: (scoreMode() ? 'score' : 'bubbles') === value ? 'selected' : '',
+            'aria-pressed': String((scoreMode() ? 'score' : 'bubbles') === value),
+            onclick: () => {
+              app.setSetting('songView', value);
+              renderViewBar();
+              sheet.hidden = scoreMode();
+              score.hidden = !scoreMode();
+              mark();
+            },
+          },
+          text,
+        ),
+      ),
+    );
+  }
+
+  // Which phrase holds note `index`, and where that phrase starts.
+  function phraseOf(index) {
+    let start = 0;
+    for (const phrase of song.phrases) {
+      if (index < start + phrase.length) return { phrase, start };
+      start += phrase.length;
+    }
+    const last = song.phrases.at(-1);
+    return { phrase: last, start: items.length - last.length };
+  }
+
+  function drawScore(highlight) {
+    const { phrase, start } = phraseOf(Math.min(highlight, items.length - 1));
+    score.innerHTML = staffSvg(
+      phrase.map((item, i) => {
+        const index = start + i;
+        // Played notes fade, the note to play is in its color, the rest in ink.
+        const color = index < highlight ? '#a3a8c3' : index === highlight ? item.note.color : undefined;
+        return { step: item.note.step, accidental: item.note.accidental, color, beats: item.beats };
+      }),
+      { width: 110 + phrase.length * 40, startX: 100, label: t(`song.${song.id}`) },
+    );
+  }
 
   // Songs with sharps or flats always use the piano, since only it has black keys.
   const needsPiano = items.some((item) => item.note.black);
@@ -80,7 +136,9 @@ export function mount(root, app, [songId]) {
       b.classList.toggle('played', i < position);
       b.classList.toggle('next', i === position);
     });
-    instrument.setGlow(items[position]?.note ?? null);
+    // With the score, the keyboard does not light the answer: the child reads it.
+    instrument.setGlow(scoreMode() ? null : items[position]?.note ?? null);
+    if (scoreMode()) drawScore(position);
     // Keep the current note's line in view inside the song sheet only.
     const current = bubbles[position];
     if (current) sheet.scrollTo({ top: current.offsetTop - sheet.clientHeight / 2, behavior: 'smooth' });
@@ -114,6 +172,7 @@ export function mount(root, app, [songId]) {
       onNote: (i) => {
         instrument.flash(items[i].note);
         bubbles.forEach((b, j) => b.classList.toggle('singing', j === i));
+        if (scoreMode()) drawScore(i);
       },
       onEnd: () => {
         stopMelody = null;
@@ -136,7 +195,7 @@ export function mount(root, app, [songId]) {
     h(
       'div',
       { class: 'play' },
-      h('div', { class: 'panel sheet-panel' }, sheet, status),
+      h('div', { class: 'panel sheet-panel' }, viewBar, sheet, score, status),
       h('div', { class: 'instrument-area' }, instrument.el),
       h(
         'div',
@@ -146,6 +205,9 @@ export function mount(root, app, [songId]) {
       ),
     ),
   );
+  renderViewBar();
+  sheet.hidden = scoreMode();
+  score.hidden = !scoreMode();
   mark();
 
   return () => {

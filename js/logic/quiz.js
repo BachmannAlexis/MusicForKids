@@ -1,3 +1,4 @@
+import { pitch } from './theory.js';
 import { getNote } from './notes.js';
 
 export const ROUNDS_PER_GAME = 10;
@@ -74,4 +75,70 @@ export function roundPlan(pool, rounds = ROUNDS_PER_GAME, rng = Math.random) {
     plan.push(id);
   }
   return plan;
+}
+
+/* ---------- Levels of the Ears and Read games ---------- */
+
+const SCALE = ['do', 're', 'mi', 'fa', 'sol', 'la', 'si', 'do2'];
+
+// Ears: 4 adds the black keys (played on the piano), 5 is the whole scale
+// without the reference Do (the child can still ask for it).
+export const EAR_LEVELS = [
+  { id: 1, pool: ['do', 'mi', 'sol'], reference: true },
+  { id: 2, pool: ['do', 're', 'mi', 'fa', 'sol'], reference: true },
+  { id: 3, pool: SCALE, reference: true },
+  { id: 4, pool: ['do', 'do#', 're', 're#', 'mi', 'fa', 'fa#', 'sol', 'sol#', 'la', 'la#', 'si', 'do2'], reference: true, piano: true, desc: true },
+  { id: 5, pool: SCALE, reference: false, desc: true },
+];
+
+// Read: 4 goes higher, up to La above the staff; 5 adds sharps and flats.
+export const READ_LEVELS = [
+  { id: 1, pool: ['do', 'mi', 'sol'] },
+  { id: 2, pool: ['do', 're', 'mi', 'fa', 'sol'] },
+  { id: 3, pool: SCALE },
+  { id: 4, high: true, desc: true },
+  { id: 5, accidentals: true, desc: true },
+];
+
+// Level 4 of Read: every white note from middle Do up to La above the staff.
+export function highReadingNotes() {
+  const notes = [];
+  for (let octave = 4; octave <= 5; octave++) {
+    for (let letter = 0; letter < 7; letter++) {
+      if (octave === 5 && letter > 5) break;
+      notes.push(pitch(letter, 0, octave));
+    }
+  }
+  return notes;
+}
+
+// Level 5 of Read: a note with a sharp or a flat, and 4 answers to choose from
+// (the right one, the same letter without the sign, and neighbours with signs).
+// Fa♭, Do♭, Mi♯ and Si♯ are left out: children meet them much later.
+const RARE = new Set(['C-1', 'F-1', 'E1', 'B1']);
+const LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const valid = (letter, alter) => !RARE.has(`${LETTERS[letter]}${alter}`);
+
+export function accidentalQuestion(previousId = null, rng = Math.random) {
+  let target;
+  do {
+    const letter = Math.floor(rng() * 7);
+    const alter = rng() < 0.5 ? 1 : -1;
+    if (valid(letter, alter)) target = pitch(letter, alter, 4);
+  } while (!target || target.id === previousId);
+  const L = target.letterIndex;
+  const candidates = [
+    pitch(L, 0, 4),
+    pitch(L, -target.alter, 4),
+    pitch((L + 1) % 7, target.alter, 4),
+    pitch((L + 6) % 7, target.alter, 4),
+    pitch((L + 1) % 7, 0, 4),
+  ].filter((n) => valid(n.letterIndex, n.alter));
+  const options = [target];
+  for (const n of candidates) {
+    if (options.length === 4) break;
+    if (!options.some((o) => o.name === n.name && o.alter === n.alter)) options.push(n);
+  }
+  options.sort((a, b) => a.letterIndex - b.letterIndex || a.alter - b.alter);
+  return { target, options };
 }

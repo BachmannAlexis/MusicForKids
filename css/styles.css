@@ -1771,6 +1771,30 @@ button {
   color: inherit;
 }
 
+/* Songs: bubbles or score */
+.segmented.view-switch {
+  padding: 3px;
+  justify-self: center;
+  width: min(100%, 260px);
+}
+
+.segmented.view-switch button {
+  min-height: 32px;
+  font-size: 0.85rem;
+}
+
+.score-art {
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  padding: 2px 0;
+}
+
+.score-art .staff {
+  width: 100%;
+  height: clamp(84px, 18dvh, 150px);
+}
+
 /* Copy-cat */
 .echo-panel {
   display: grid;

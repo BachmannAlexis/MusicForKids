@@ -47,6 +47,7 @@ const app = {
     renderHeader();
   },
   rerender: () => render(),
+  go: (path) => go(path),
   // Save a setting the app learns by itself (e.g. the phone's sound delay), without redrawing.
   setSetting(key, value) {
     app.settings = { ...app.settings, [key]: value };
