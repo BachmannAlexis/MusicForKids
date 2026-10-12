@@ -1,5 +1,5 @@
 import { t, cheer } from '../i18n.js';
-import { getNote } from '../logic/notes.js';
+import { getNote, noteLabel } from '../logic/notes.js';
 import { ECHO_POOL, createEcho, addNote, play, echoStars } from '../logic/echo.js';
 import { recordBest } from '../logic/progress.js';
 import { playMelody, playSuccess, playOops } from '../audio.js';
@@ -51,6 +51,21 @@ export function mount(root, app) {
     best.textContent = t('echo.best', { n: state.best });
   }
 
+  // Help for the child's turn: light up only the key the tune starts on,
+  // without playing the tune again.
+  const hintButton = h(
+    'button',
+    { class: 'btn secondary wide', type: 'button', onclick: showFirstNote, disabled: true },
+    icon('keys'),
+    t('echo.firstNote'),
+  );
+
+  function showFirstNote() {
+    const first = getNote(state.sequence[0]);
+    instrument.setGlow(first);
+    status.textContent = t('echo.startsOn', { note: noteLabel(first, app.settings) });
+  }
+
   function startButton(label) {
     return h('button', { class: 'btn wide', type: 'button', onclick: start }, icon(label === 'start' ? 'play' : 'restart'), t(label === 'start' ? 'echo.start' : 'playAgain'));
   }
@@ -58,7 +73,7 @@ export function mount(root, app) {
   function start() {
     state = createEcho();
     lives = LIVES;
-    actions.replaceChildren();
+    actions.replaceChildren(hintButton);
     grow();
   }
 
@@ -70,6 +85,8 @@ export function mount(root, app) {
   function replay() {
     renderInfo();
     instrument.setDisabled(true);
+    instrument.setGlow(null);
+    hintButton.disabled = true;
     status.textContent = t('echo.listen');
     const items = state.sequence.map((id) => ({ note: getNote(id), beats: 1 }));
     later(() => {
@@ -79,6 +96,7 @@ export function mount(root, app) {
         onEnd: () => {
           stopMelody = null;
           instrument.setDisabled(false);
+          hintButton.disabled = false;
           status.textContent = t('echo.yourTurn');
         },
       });
@@ -86,15 +104,18 @@ export function mount(root, app) {
   }
 
   function handle(note) {
+    instrument.setGlow(null);
     const outcome = play(state, note.id);
     state = outcome.state;
     if (outcome.result === 'complete') {
       instrument.setDisabled(true);
+      hintButton.disabled = true;
       status.textContent = cheer();
       later(playSuccess, 300);
       later(grow, 1200);
     } else if (outcome.result === 'wrong') {
       instrument.setDisabled(true);
+      hintButton.disabled = true;
       lives -= 1;
       renderInfo();
       later(playOops, 250);
