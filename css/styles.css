@@ -1123,6 +1123,24 @@ button {
   transform: scale(1.1);
 }
 
+.panel-head.with-direction {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+}
+
+.segmented.direction {
+  padding: 3px;
+  gap: 2px;
+}
+
+.segmented.direction button {
+  min-height: 34px;
+  min-width: 38px;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
 .panel-extra {
   font-size: 0.82rem;
   font-weight: 700;
