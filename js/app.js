@@ -11,6 +11,8 @@ import * as echo from './screens/echo.js';
 import * as songs from './screens/songs.js';
 import * as scales from './screens/scales.js';
 import * as intervals from './screens/intervals.js';
+import * as chords from './screens/chords.js';
+import * as rhythms from './screens/rhythms.js';
 
 const ROUTES = {
   '': (root, app) => home.mount(root, app),
@@ -21,6 +23,8 @@ const ROUTES = {
   songs: (root, app, params) => songs.mount(root, app, params),
   scales: (root, app) => scales.mount(root, app),
   intervals: (root, app, params) => intervals.mount(root, app, params),
+  chords: (root, app, params) => chords.mount(root, app, params),
+  rhythms: (root, app, params) => rhythms.mount(root, app, params),
 };
 
 const saved = load();

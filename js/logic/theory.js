@@ -165,3 +165,70 @@ export function intervalShort(interval, lang = 'en') {
   const q = (SHORT[lang] ?? SHORT.en)[interval.quality];
   return lang === 'fr' ? `${interval.number}${q}` : `${q}${interval.number}`;
 }
+
+/* ---------- Chords (accords) ---------- */
+
+// Triads by the size of their third and fifth above the root, in semitones.
+export const CHORD_TYPES = {
+  major: { third: 4, fifth: 7 },
+  minor: { third: 3, fifth: 7 },
+  diminished: { third: 3, fifth: 6 },
+  augmented: { third: 4, fifth: 8 },
+};
+
+export function buildChord(root, type) {
+  const shape = CHORD_TYPES[type];
+  if (!shape) throw new Error(`Unknown chord type: ${type}`);
+  return [root, noteAbove(root, 3, shape.third), noteAbove(root, 5, shape.fifth)];
+}
+
+export function chordType(notes) {
+  const third = notes[1].midi - notes[0].midi;
+  const fifth = notes[2].midi - notes[0].midi;
+  return Object.keys(CHORD_TYPES).find((k) => CHORD_TYPES[k].third === third && CHORD_TYPES[k].fifth === fifth) ?? null;
+}
+
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+
+// Upper case for major and augmented chords, lower case for minor and diminished.
+export function romanNumeral(degree, type) {
+  let r = ROMAN[degree];
+  if (type === 'minor' || type === 'diminished') r = r.toLowerCase();
+  if (type === 'diminished') r += '°';
+  if (type === 'augmented') r += '+';
+  return r;
+}
+
+// The seven chords built on the degrees of a scale, each made of scale notes
+// stacked in thirds. Roots sit between Do4 and Si4 so every chord fits the staff.
+export function diatonicChords(tonicSpec, scaleType = 'major') {
+  const scale = buildScale(tonicSpec, scaleType).slice(0, 7);
+  const above = (root, number, target) => noteAbove(root, number, (((target.midi - root.midi) % 12) + 12) % 12);
+  return scale.map((degreeNote, i) => {
+    let root = pitch(degreeNote.letterIndex, degreeNote.alter, 4);
+    if (root.midi < 60) root = pitch(degreeNote.letterIndex, degreeNote.alter, 5);
+    const notes = [root, above(root, 3, scale[(i + 2) % 7]), above(root, 5, scale[(i + 4) % 7])];
+    const type = chordType(notes);
+    return { degree: i, roman: romanNumeral(i, type), type, notes };
+  });
+}
+
+const CHORD_NAMES = {
+  en: { major: 'major', minor: 'minor', diminished: 'diminished', augmented: 'augmented' },
+  fr: { major: 'majeur', minor: 'mineur', diminished: 'diminué', augmented: 'augmenté' },
+};
+const CHORD_SYMBOL = { major: '', minor: 'm', diminished: '°', augmented: '+' };
+
+export function chordTypeName(type, lang = 'en') {
+  return (CHORD_NAMES[lang] ?? CHORD_NAMES.en)[type];
+}
+
+// "Ré mineur" / "Re minor"; rootLabel is the root's name in the chosen naming.
+export function chordName(rootLabel, type, lang = 'en') {
+  return `${rootLabel} ${chordTypeName(type, lang)}`;
+}
+
+// Compact chord symbol: "Ré", "Rém", "Si°", "Do+".
+export function chordSymbol(rootLabel, type) {
+  return `${rootLabel}${CHORD_SYMBOL[type]}`;
+}

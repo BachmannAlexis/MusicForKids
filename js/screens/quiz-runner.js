@@ -9,8 +9,8 @@ import { celebrate } from '../ui/celebrate.js';
 // Shared engine for the 10-question games (Ears, Read, Intervals).
 // spec: {
 //   progressKey, levelLabel, back,
-//   choices: [{ id, label, color?, ink? }],
-//   nextQuestion(previous) → { answerId, text, render(stage), play?(), playAnswer?(), reveal? }
+//   choices: [{ id, label, color?, ink?, title? }] (or per question, from nextQuestion),
+//   nextQuestion(previous) → { answerId, text, render(stage), play?(), playAnswer?(), reveal?, choices? }
 // }
 // play() is called when the question appears and again after a wrong answer;
 // playAnswer() (or play()) when the child finds the right answer.
@@ -34,24 +34,28 @@ export function runQuiz(root, app, spec) {
   const question = h('p', { class: 'question' });
   const feedback = h('p', { class: 'feedback', 'aria-live': 'polite' });
   const stage = h('div', { class: 'stage' });
-  const answers = h('div', { class: 'answers', style: { '--cols': spec.cols ?? Math.min(spec.choices.length, 4) } });
+  const answers = h('div', { class: 'answers' });
 
-  answers.append(
-    ...spec.choices.map((choice) =>
-      h(
-        'button',
-        {
-          class: choice.color ? 'answer' : 'answer plain',
-          type: 'button',
-          style: choice.color ? { '--c': choice.color, '--ink': choice.ink } : null,
-          title: choice.title,
-          'aria-label': choice.title,
-          onclick: (e) => answer(choice, e.currentTarget),
-        },
-        choice.label,
+  function renderChoices(choices) {
+    answers.style.setProperty('--cols', spec.cols ?? Math.min(choices.length, 4));
+    answers.replaceChildren(
+      ...choices.map((choice) =>
+        h(
+          'button',
+          {
+            class: choice.color ? 'answer' : `answer plain${choice.wide ? ' wide' : ''}`,
+            type: 'button',
+            style: choice.color ? { '--c': choice.color, '--ink': choice.ink } : null,
+            title: choice.title,
+            'aria-label': choice.title,
+            onclick: (e) => answer(choice, e.currentTarget),
+          },
+          choice.label,
+        ),
       ),
-    ),
-  );
+    );
+  }
+  if (spec.choices) renderChoices(spec.choices);
 
   function renderDots() {
     dots.replaceChildren(
@@ -72,6 +76,8 @@ export function runQuiz(root, app, spec) {
     feedback.className = 'feedback';
     renderDots();
     question.textContent = current.text;
+    // Some games (rhythms) offer different answers for every question.
+    if (current.choices) renderChoices(current.choices);
     stage.replaceChildren();
     stage.className = 'stage';
     current.render(stage);

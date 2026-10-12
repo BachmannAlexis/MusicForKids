@@ -91,3 +91,76 @@ export function playSuccess() {
 export function playOops() {
   tone(frequency(55), { duration: 0.25, volume: 0.2 });
 }
+
+// A chord: its notes one by one from the bottom, then all together.
+export function playChord(notes) {
+  const step = 0.2;
+  notes.forEach((n, i) => tone(frequency(n.midi), { start: i * step, duration: 0.35, volume: 0.28 }));
+  const together = notes.length * step + 0.15;
+  notes.forEach((n) => tone(frequency(n.midi), { start: together, duration: 1.1, volume: 0.2 }));
+}
+
+// Short percussive sounds: 'note' (woodblock), 'tick' (metronome, beat 1 is 'accent').
+function percussion(kind, start) {
+  const ac = context();
+  if (!ac) return;
+  const t0 = ac.currentTime + start;
+  const osc = ac.createOscillator();
+  const gain = ac.createGain();
+  const settings = {
+    note: { from: 950, to: 620, volume: 0.5, length: 0.12, type: 'sine' },
+    tick: { from: 1500, to: 1400, volume: 0.12, length: 0.04, type: 'square' },
+    accent: { from: 2000, to: 1900, volume: 0.16, length: 0.05, type: 'square' },
+  }[kind];
+  osc.type = settings.type;
+  osc.frequency.setValueAtTime(settings.from, t0);
+  osc.frequency.exponentialRampToValueAtTime(settings.to, t0 + settings.length);
+  gain.gain.setValueAtTime(settings.volume, t0);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + settings.length);
+  osc.connect(gain).connect(ac.destination);
+  osc.start(t0);
+  osc.stop(t0 + settings.length + 0.02);
+}
+
+// A held note with a flat, organ-like level, so its length can be heard
+// (a half note really sounds twice as long as a quarter note).
+function sustain(midi, start, duration) {
+  const ac = context();
+  if (!ac) return;
+  const t0 = ac.currentTime + start;
+  const gain = ac.createGain();
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.exponentialRampToValueAtTime(0.22, t0 + 0.02);
+  gain.gain.setValueAtTime(0.22, t0 + Math.max(0.03, duration - 0.05));
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+  gain.connect(ac.destination);
+  for (const [mult, level] of [[1, 1], [2, 0.3], [3, 0.12]]) {
+    const osc = ac.createOscillator();
+    const partial = ac.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = frequency(midi) * mult;
+    partial.gain.value = level;
+    osc.connect(partial).connect(gain);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.05);
+  }
+}
+
+// Exposed for the drum pad: the woodblock the child plays.
+export function playWoodblock() {
+  percussion('note', 0);
+}
+
+// Schedules sounds at beat positions on the audio clock (precise even if the
+// page is busy). hits: [{ beat, kind: 'tick' | 'accent' | 'note' | 'tone', beats? }] Returns the moment beat 0 will be heard, in
+// performance.now() time, so taps can be compared against the sound.
+export function playRhythm(hits, bpm, { leadIn = 0.15 } = {}) {
+  const beat = 60 / bpm;
+  const ac = context();
+  for (const hit of hits) {
+    if (hit.kind === 'tone') sustain(hit.midi ?? 67, leadIn + hit.beat * beat, hit.beats * beat * 0.92);
+    else percussion(hit.kind, leadIn + hit.beat * beat);
+  }
+  const latency = ac ? (ac.outputLatency || ac.baseLatency || 0) : 0;
+  return performance.now() + (leadIn + latency) * 1000;
+}
