@@ -1,0 +1,12 @@
+{
+  "name": "music-for-kids",
+  "version": "1.0.0",
+  "description": "A playful web app for children to learn solfège and music.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes serve . -l 8080",
+    "test": "node --test tests/*.test.js"
+  },
+  "license": "MIT"
+}
