@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SONGS, getSong, parseMelody, flatten } from '../js/logic/songs.js';
+import { SONGS, getSong, parseMelody, flatten, songUsesBlackKeys } from '../js/logic/songs.js';
+import { staffSvg } from '../js/ui/staff.js';
 import { emptyProgress, recordBest, recordSong, totalStars } from '../js/logic/progress.js';
 
 test('every song parses and stays in the playable range', () => {
@@ -33,4 +34,25 @@ test('progress keeps the best stars and counts songs', () => {
   p = recordSong(p, 'twinkle');
   assert.equal(p.best['listen-1'], 2);
   assert.equal(totalStars(p), 6);
+});
+
+test('song ids are unique and only Happy Birthday needs a black key', () => {
+  assert.equal(new Set(SONGS.map((s) => s.id)).size, SONGS.length);
+  assert.deepEqual(
+    SONGS.filter((s) => songUsesBlackKeys(s.id)).map((s) => s.id),
+    ['birthday'],
+  );
+});
+
+test('every song has phrases whose beats add up to whole beats', () => {
+  for (const song of SONGS) {
+    const beats = flatten(getSong(song.id).phrases).reduce((sum, item) => sum + item.beats, 0);
+    assert.equal(beats % 0.5, 0, song.id);
+  }
+});
+
+test('the staff draws sharps and flats', () => {
+  assert.match(staffSvg([{ step: 4, accidental: 'flat' }]), /♭/);
+  assert.match(staffSvg([{ step: -2, accidental: 'sharp' }]), /♯/);
+  assert.doesNotMatch(staffSvg([{ step: 0 }]), /[♯♭]/);
 });

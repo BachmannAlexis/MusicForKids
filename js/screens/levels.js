@@ -1,31 +1,33 @@
 import { t } from '../i18n.js';
 import { LEVELS, choicesFor } from '../logic/quiz.js';
 import { noteLabel } from '../logic/notes.js';
-import { h, starsText } from '../ui/dom.js';
+import { h, starsRow } from '../ui/dom.js';
 
 // Level picker shared by the "Ears" and "Read" games.
-export function levelPicker(mode, app, emoji) {
+export function levelPicker(mode, app) {
   return h(
     'div',
-    {},
-    h('h2', {}, `${emoji} `, t(`game.${mode}`)),
-    h('p', { class: 'tagline' }, t('level.choose')),
+    { class: 'list-screen' },
+    h('p', { class: 'lead' }, t(`game.${mode}.desc`)),
     h(
       'div',
-      { class: 'levels' },
+      { class: 'list' },
       LEVELS.map((level) =>
         h(
           'a',
-          { class: 'level', href: `#/${mode}/${level.id}` },
-          h('span', { class: 'level-title' }, t('level', { n: level.id })),
+          { class: 'row', href: `#/${mode}/${level.id}` },
+          h('span', { class: 'row-badge' }, String(level.id)),
           h(
             'span',
-            { class: 'level-notes' },
-            choicesFor(level.pool).map((n) =>
-              h('span', { class: 'chip', style: { '--chip-color': n.color } }, noteLabel(n, app.settings)),
+            { class: 'row-main' },
+            h('span', { class: 'row-title' }, t('level', { n: level.id })),
+            h(
+              'span',
+              { class: 'chips' },
+              choicesFor(level.pool).map((n) => h('span', { class: 'chip', style: { '--c': n.color, '--ink': n.ink } }, noteLabel(n, app.settings))),
             ),
           ),
-          h('span', { class: 'stars' }, starsText(app.progress.best[`${mode}-${level.id}`] ?? 0)),
+          starsRow(app.progress.best[`${mode}-${level.id}`] ?? 0),
         ),
       ),
     ),

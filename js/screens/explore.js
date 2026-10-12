@@ -2,53 +2,68 @@ import { t } from '../i18n.js';
 import { NOTES, noteLabel } from '../logic/notes.js';
 import { playMelody } from '../audio.js';
 import { h } from '../ui/dom.js';
+import { icon } from '../ui/icons.js';
 import { staffSvg } from '../ui/staff.js';
-import { createXylophone } from '../ui/xylophone.js';
+import { createInstrument } from '../ui/instrument.js';
 
 export function mount(root, app) {
-  const staff = h('div', { class: 'staff-box' });
-  const bubble = h('div', { class: 'note-bubble', 'aria-live': 'polite' }, '🎵');
+  app.setBar({ title: t('game.explore'), back: '' });
+  const piano = app.settings.instrument === 'piano';
+  const staff = h('div', { class: 'staff-art' });
+  const name = h('div', { class: 'note-name', 'aria-live': 'polite' }, t('explore.tap'));
   let stopMelody = null;
 
   function show(note) {
-    staff.innerHTML = staffSvg([{ step: note.step, color: note.color }], { label: noteLabel(note, app.settings) });
-    bubble.textContent = t('explore.sing', { note: noteLabel(note, app.settings) });
-    bubble.style.setProperty('--bubble-color', note.color);
+    staff.innerHTML = staffSvg([{ step: note.step, color: note.color, accidental: note.accidental }], {
+      label: noteLabel(note, app.settings),
+    });
+    name.textContent = noteLabel(note, app.settings);
+    name.classList.add('active');
+    name.style.setProperty('--c', note.color);
   }
 
-  const xylo = createXylophone({ settings: app.settings, onPress: show });
+  const instrument = createInstrument({ settings: app.settings, onPress: show });
   staff.innerHTML = staffSvg([]);
 
   const scaleButton = h(
     'button',
     {
       class: 'btn',
+      type: 'button',
       onclick: () => {
         stopMelody?.();
         const items = NOTES.map((note) => ({ note, beats: 1 }));
         stopMelody = playMelody(items, {
           bpm: 120,
           onNote: (i) => {
-            xylo.flash(items[i].note.id);
+            instrument.flash(items[i].note);
             show(items[i].note);
           },
         });
       },
     },
-    '🪜 ',
+    icon('play'),
     t('explore.scale'),
   );
 
   root.append(
-    h('h2', {}, '🎹 ', t('game.explore')),
-    h('div', { class: 'explore-top' }, staff, bubble),
-    xylo.el,
-    h('p', { class: 'hint' }, t('explore.hint')),
-    h('div', { class: 'actions' }, scaleButton),
+    h(
+      'div',
+      { class: 'play' },
+      h('div', { class: 'panel staff-panel' }, staff, name),
+      h('div', { class: 'instrument-area' }, instrument.el),
+      h(
+        'div',
+        { class: 'play-footer' },
+        piano && h('p', { class: 'hint' }, t('explore.blackKeys')),
+        h('p', { class: 'hint kbd-hint' }, t(piano ? 'explore.hint.piano' : 'explore.hint')),
+        scaleButton,
+      ),
+    ),
   );
 
   return () => {
     stopMelody?.();
-    xylo.destroy();
+    instrument.destroy();
   };
 }

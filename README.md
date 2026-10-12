@@ -2,27 +2,33 @@
 
 A playful web app that helps children (about 4–10 years old) learn **solfège** — Do, Ré, Mi, Fa, Sol, La, Si — and the basics of music.
 It runs in any modern browser, on tablets, phones and computers, with no installation and no account.
+It is designed phone-first: every game fits on one screen (portrait or landscape) with no scrolling, and it can be added to the home screen like an app (it has a web app manifest and icons).
 
 ## Activities
 
 | | Activity | What children learn |
 |---|---|---|
-| 🎹 | **Discover** | Play a colorful xylophone; each note shows its name and its place on the staff. |
+| 🎹 | **Discover** | Play a colorful xylophone or a piano with black keys; each note shows its name and its place on the staff, with ♯ for black keys. |
 | 👂 | **Ears** | Hear a note and find its name (ear training), in 3 levels: Do-Mi-Sol → Do…Sol → full scale. |
 | 🎼 | **Read** | Read a note on the treble staff and name it, in the same 3 levels. |
+| 🪜 | **Scales** (Gammes) | Major, natural minor and harmonic minor scales starting on any of the 12 notes, correctly spelled (Ré majeur: Fa♯ Do♯; Sol♯ mineur harmonique: Fa♯♯). Shows the key signature, the scale on the staff and the tones (T) and semitones (½) between notes; listen to it, then play it on the piano for a ⭐. |
+| 🎯 | **Intervals** | Explore every interval from the minor second to the octave above any note (with the number of semitones), then 4 games: third/fifth/octave in Do, second to octave in Do, major/minor/perfect from any note, and by ear only. |
+| 🎹 | **Chords** (Accords) | The seven chords of any major or minor key (I, ii, iii, IV, V, vi, vii°), each shown on the staff and keyboard, plus the I–IV–V–I cadence; a chord builder (major, minor, diminished, augmented on any note, explained as stacked thirds); 4 games: major or minor, four kinds of chords, by ear only, and degrees in Do. |
+| 🥁 | **Rhythms** (Rythmes) | The note values and rests (ronde, blanche, noire, croches, pointées, soupir…) with their beats; *Tap the rhythm*: after a count-in, tap a 4/4 bar on the drum and see each note graded on time / close / missed; *Which rhythm?*: hear a rhythm and pick its notation. 4 levels each. |
 | 🦜 | **Copy-cat** | Repeat a melody that grows one note at a time (musical memory). 3 lives. |
-| 🎵 | **Songs** | Play real songs note by note, guided by the glowing bar: Twinkle Twinkle, Frère Jacques, Au clair de la lune, Mary Had a Little Lamb, Ode to Joy, and the Do Re Mi ladder. |
+| 🎵 | **Songs** | Play 13 real songs note by note, guided by the glowing key: the Do Re Mi ladder, Hot Cross Buns, Mary Had a Little Lamb, Twinkle Twinkle (Ah ! vous dirai-je, maman), Au clair de la lune, Frère Jacques, London Bridge, Old MacDonald, Row Your Boat, Lightly Row, Jingle Bells (Vive le vent), Ode to Joy and Happy Birthday. |
 
-Children earn up to 3 ⭐ per game level and one ⭐ per song they finish. Progress is saved in the browser.
+Children earn up to 3 ⭐ per game level, one ⭐ per song they finish and one ⭐ per scale they play. Progress is saved in the browser.
 
 ### Settings (⚙️)
 
 - **Language:** English or French.
 - **Note names:** solfège (Do Re Mi … Si, in both languages) or letters (C D E).
+- **Instrument:** xylophone (white notes only) or piano with black keys (Do♯/Ré♭ … La♯/Si♭). Songs that need a black key, like Happy Birthday (Si♭), always use the piano.
 - **Sound** on/off, and a button to reset stars.
 
 Each note keeps the same color everywhere (classroom bell / Boomwhacker colors), so children can link color, sound, name and staff position.
-On a computer, the keys `A S D F G H J K` (or `1`–`8`) play Do to high Do.
+On a computer, the keys `A S D F G H J K` (or `1`–`8`) play Do to high Do, and `W E T Y U` play the black keys.
 
 ## Run it
 
@@ -55,16 +61,18 @@ js/
   audio.js          Web Audio xylophone synth
   i18n.js           English and French texts
   storage.js        saves settings and stars in localStorage
-  logic/            pure game rules (tested)
+  logic/            pure game rules and music theory (tested)
   screens/          one module per activity
-  ui/               xylophone, staff drawing, helpers
+  ui/               xylophone/piano, staff drawing, icons, helpers
+icons/              app icons (home screen)
+manifest.webmanifest
 tests/
 ```
 
 ### Adding a song
 
 Add an entry to `SONGS` in `js/logic/songs.js` and its title in both languages in `js/i18n.js`.
-Melodies are written as `note:beats` tokens (beats default to 1), with `|` between phrases, using notes from `do` to `do2` (high Do):
+Melodies are written as `note:beats` tokens (beats default to 1), with `|` between phrases, using notes from `do` to `do2` (high Do). Black keys are written as sharps (`do#`, `re#`, `fa#`, `sol#`, `la#`) or flats (`reb`, `mib`, `solb`, `lab`, `sib`):
 
 ```js
 { id: 'mysong', emoji: '🐦', melody: 'do re mi do | mi fa sol:2' }

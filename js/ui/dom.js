@@ -17,6 +17,15 @@ export function h(tag, props = {}, ...children) {
   return el;
 }
 
-export function starsText(count, max = 3) {
-  return '★'.repeat(count) + '☆'.repeat(Math.max(0, max - count));
+import { icon } from './icons.js';
+
+// A row of filled / empty stars, e.g. 2 of 3.
+export function starsRow(count, max = 3, className = 'stars') {
+  const row = h('span', { class: className, role: 'img', 'aria-label': `${count} / ${max}` });
+  for (let i = 0; i < max; i++) {
+    const star = icon('star');
+    star.classList.toggle('on', i < count);
+    row.append(star);
+  }
+  return row;
 }

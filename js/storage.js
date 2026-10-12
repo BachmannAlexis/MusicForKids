@@ -4,7 +4,7 @@ const KEY = 'music-for-kids:v1';
 
 function defaultSettings() {
   const lang = (navigator.language || 'en').toLowerCase().startsWith('fr') ? 'fr' : 'en';
-  return { lang, naming: 'solfege', sound: true };
+  return { lang, naming: 'solfege', instrument: 'xylophone', sound: true };
 }
 
 export function load() {
