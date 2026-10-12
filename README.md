@@ -43,7 +43,7 @@ npm start            # serves on http://localhost:8080
 
 Opening `index.html` directly from disk does not work, because browsers block JavaScript modules on `file://`.
 
-To publish it, enable **GitHub Pages** for this repository (Settings → Pages → deploy from the `main` branch, root folder).
+It is published at **https://bachmannalexis.github.io/MusicForKids/** by the *Deploy to GitHub Pages* workflow, which runs the tests and deploys on every push to `main` (Settings → Pages → Source: **GitHub Actions**).
 
 ## Tests
 
