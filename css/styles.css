@@ -1390,6 +1390,26 @@ button {
   color: var(--bad);
 }
 
+.r-event.short {
+  color: #ef8a17;
+}
+
+.hold-hint {
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+.drum-pad.held {
+  transform: scale(0.95);
+  filter: brightness(1.12);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18), 0 0 0 10px color-mix(in srgb, #f4511e 30%, transparent);
+}
+
+.figure-card.playing {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
 .rhythm-panel {
   display: grid;
   gap: 6px;

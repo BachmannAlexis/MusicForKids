@@ -95,3 +95,42 @@ export function rhythmStars(averageScore) {
 export function patternsUpTo(levelId) {
   return RHYTHM_LEVELS.filter((l) => l.id <= levelId).flatMap((l) => l.patterns);
 }
+
+// The notes of a pattern with their timing in ms after the first beat:
+// { time, length, long } — long notes (1.5 beats or more) must be held.
+export function noteEvents(pattern, bpm) {
+  const beatMs = 60000 / bpm;
+  return pattern.events
+    .filter((e) => !e.rest)
+    .map((e) => ({ time: e.start * beatMs, length: e.beats * beatMs, long: e.beats >= 1.5 }));
+}
+
+// Grade presses on the drum ({ down, up } in ms, same clock as the notes):
+// each note is matched with the closest unused press by its start, then long
+// notes are checked for how long the finger stayed down (at least `hold` of
+// their length). Grades: 'perfect' | 'good' | 'short' (long note let go too
+// soon) | 'miss'. Score 0-1, extra presses cost half a note each.
+export function gradePresses(notes, presses, { perfect = 110, good = 220, hold = 0.6 } = {}) {
+  const used = new Set();
+  const results = notes.map((note) => {
+    let best = -1;
+    let bestError = Infinity;
+    presses.forEach((press, i) => {
+      const error = Math.abs(press.down - note.time);
+      if (!used.has(i) && error < bestError) {
+        best = i;
+        bestError = error;
+      }
+    });
+    if (best === -1 || bestError > good) return { grade: 'miss', error: null };
+    used.add(best);
+    const press = presses[best];
+    if (note.long && press.up - press.down < note.length * hold) return { grade: 'short', error: press.down - note.time };
+    return { grade: bestError <= perfect ? 'perfect' : 'good', error: press.down - note.time };
+  });
+  const extra = presses.length - used.size;
+  const value = { perfect: 1, good: 0.6, short: 0.5, miss: 0 };
+  const points = results.reduce((sum, r) => sum + value[r.grade], 0);
+  const score = notes.length ? Math.max(0, (points - extra * 0.5) / notes.length) : 0;
+  return { results, extra, score };
+}

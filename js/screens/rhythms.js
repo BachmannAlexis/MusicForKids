@@ -1,7 +1,7 @@
 import { t, cheer } from '../i18n.js';
-import { FIGURES, RHYTHM_LEVELS, getRhythmLevel, parsePattern, patternsUpTo, onsets, gradeTaps, rhythmStars } from '../logic/rhythm.js';
+import { FIGURES, RHYTHM_LEVELS, getRhythmLevel, parsePattern, patternsUpTo, noteEvents, gradePresses, rhythmStars } from '../logic/rhythm.js';
 import { recordBest } from '../logic/progress.js';
-import { playRhythm, playWoodblock, playSuccess } from '../audio.js';
+import { playRhythm, holdNote, playSuccess } from '../audio.js';
 import { h, starsRow } from '../ui/dom.js';
 import { icon } from '../ui/icons.js';
 import { rhythmSvg, figureSvg } from '../ui/staff.js';
@@ -80,6 +80,22 @@ function menu(root, app) {
 function figures(root, app) {
   app.setBar({ title: t('rhythms.figures'), back: 'rhythms' });
   const list = ['w', 'hd', 'h', 'q', 'ee', 'qd e', 'wr', 'hr', 'qr'];
+  let stopCurrent = null;
+
+  // Only one card sounds at a time: touching another one stops the first.
+  function playCard(card, pattern) {
+    stopCurrent?.();
+    const sound = playRhythm(hitsFor(pattern, { countIn: 0 }), 72, { leadIn: 0.02 });
+    card.classList.add('playing');
+    const timer = setTimeout(() => stopCurrent?.(), (pattern.beats * 60000) / 72 + 200);
+    stopCurrent = () => {
+      clearTimeout(timer);
+      sound.stop();
+      card.classList.remove('playing');
+      stopCurrent = null;
+    };
+  }
+
   root.append(
     h(
       'div',
@@ -89,21 +105,27 @@ function figures(root, app) {
         const first = pattern.events[0];
         const beats = pattern.beats;
         const name = symbol === 'ee' ? t('figure.eighths') : symbol === 'qd e' ? t('figure.dottedPair') : t(`figure.${first.id}`);
-        return h(
+        const card = h(
           'button',
           {
             class: 'figure-card',
             type: 'button',
-            onclick: () => playRhythm(hitsFor(pattern, { countIn: 0 }), 72),
+            // Sound starts as the finger touches; if the touch turns into a
+            // scroll of the page, the browser cancels it and the sound stops.
+            ontap: () => playCard(card, pattern),
+            onpointercancel: () => stopCurrent?.(),
           },
           svgNode(figureSvg(pattern), 'figure-art'),
           h('span', { class: 'figure-name' }, name),
           h('span', { class: 'figure-beats' }, beats === 1 ? t('rhythms.beat') : t('rhythms.beats', { n: String(beats).replace('.', app.settings.lang === 'fr' ? ',' : '.') })),
         );
+        return card;
       }),
     ),
     h('p', { class: 'hint' }, t('rhythms.figures.hint')),
   );
+
+  return () => stopCurrent?.();
 }
 
 function tapGame(root, app, level) {
@@ -115,8 +137,10 @@ function tapGame(root, app, level) {
   let best = 0;
   const scores = [];
   let busy = false;
-  let taps = null; // collecting taps when not null
+  let presses = null; // collecting presses { down, up } (ms from the first beat) when not null
+  let held = null; // the press in progress: { down, release }
   let startAt = 0;
+  let sound = null; // the rhythm being played, so it can be stopped
   let timers = [];
   let frame = 0;
 
@@ -124,9 +148,24 @@ function tapGame(root, app, level) {
   const dots = h('div', { class: 'dots' });
   const art = h('div', { class: 'rhythm-art' });
   const status = h('p', { class: 'status-text', 'aria-live': 'polite' });
+  const holdHint = h('p', { class: 'hint hold-hint' }, t('rhythms.hold'));
+  // The drum sounds for as long as the finger stays on it: tap short notes,
+  // keep the finger down on long ones.
   const pad = h(
     'button',
-    { class: 'drum-pad', type: 'button', 'aria-label': t('rhythms.pad'), onpointerdown: (e) => tap(e.timeStamp || performance.now()) },
+    {
+      class: 'drum-pad',
+      type: 'button',
+      'aria-label': t('rhythms.pad'),
+      onpointerdown: (e) => {
+        if (e.button !== 0) return;
+        pad.setPointerCapture?.(e.pointerId);
+        press(e.timeStamp || performance.now());
+      },
+      onpointerup: (e) => lift(e.timeStamp || performance.now()),
+      onpointercancel: (e) => lift(e.timeStamp || performance.now()),
+      oncontextmenu: (e) => e.preventDefault(),
+    },
     icon('drum'),
     h('span', {}, t('rhythms.pad')),
   );
@@ -172,6 +211,8 @@ function tapGame(root, app, level) {
     timers.forEach(clearTimeout);
     timers = [];
     cancelAnimationFrame(frame);
+    sound?.stop();
+    sound = null;
   }
 
   // Lights the beat numbers (and counts "1 2 3 4" aloud in text) as the music plays.
@@ -196,7 +237,8 @@ function tapGame(root, app, level) {
     if (busy) return;
     clear();
     busy = true;
-    startAt = playRhythm(hitsFor(pattern), level.bpm);
+    sound = playRhythm(hitsFor(pattern), level.bpm);
+    startAt = sound.startAt;
     follow(COUNT_IN + 4, (beat) => {
       countText(beat);
       if (beat === COUNT_IN) status.textContent = t('songs.listen') + '…';
@@ -213,8 +255,9 @@ function tapGame(root, app, level) {
     busy = true;
     draw();
     // Count-in and metronome only: the child plays the notes on the pad.
-    startAt = playRhythm(hitsFor(pattern, { notes: false }), level.bpm);
-    taps = [];
+    sound = playRhythm(hitsFor(pattern, { notes: false }), level.bpm);
+    startAt = sound.startAt;
+    presses = [];
     pad.classList.add('live');
     follow(COUNT_IN + 4, (beat) => {
       countText(beat);
@@ -223,23 +266,37 @@ function tapGame(root, app, level) {
     timers.push(setTimeout(finishAttempt, startAt - performance.now() + (COUNT_IN + 4) * beatMs + 250));
   }
 
-  function tap(time) {
-    playWoodblock();
-    pad.classList.remove('hit');
-    void pad.offsetWidth;
-    pad.classList.add('hit');
-    if (taps) taps.push(time - startAt - COUNT_IN * beatMs);
+  const barTime = (time) => time - startAt - COUNT_IN * beatMs;
+
+  function press(time) {
+    if (held) lift(time);
+    held = { down: barTime(time), release: holdNote() };
+    pad.classList.add('held');
+  }
+
+  function lift(time) {
+    if (!held) return;
+    held.release();
+    pad.classList.remove('held');
+    if (presses) presses.push({ down: held.down, up: barTime(time) });
+    held = null;
   }
 
   function finishAttempt() {
     pad.classList.remove('live');
-    const result = gradeTaps(onsets(pattern, level.bpm), taps);
-    taps = null;
+    // A finger still down at the end counts as let go now.
+    if (held) lift(performance.now());
+    const result = gradePresses(noteEvents(pattern, level.bpm), presses);
+    presses = null;
     busy = false;
     best = Math.max(best, result.score);
     draw(result.results);
-    const good = result.results.filter((r) => r.grade !== 'miss').length;
-    status.textContent = `${result.score >= 0.85 ? cheer() + ' ' : ''}${t('rhythms.result', { n: good, total: result.results.length })}${result.extra ? ` · ${t('rhythms.extra', { n: result.extra })}` : ''}`;
+    const good = result.results.filter((r) => r.grade === 'perfect' || r.grade === 'good').length;
+    const short = result.results.filter((r) => r.grade === 'short').length;
+    status.textContent =
+      `${result.score >= 0.85 ? cheer() + ' ' : ''}${t('rhythms.result', { n: good, total: result.results.length })}` +
+      (short ? ` · ${t('rhythms.short', { n: short })}` : '') +
+      (result.extra ? ` · ${t('rhythms.extra', { n: result.extra })}` : '');
     if (result.score >= 0.85) playSuccess();
     setFooter(true);
   }
@@ -273,20 +330,22 @@ function tapGame(root, app, level) {
     );
   }
 
+  // Space bar = the drum on a computer (hold it for long notes too).
   const onKey = (e) => {
-    if ((e.key === ' ' || e.key === 'Enter') && !e.repeat && e.target === document.body) {
-      e.preventDefault();
-      tap(e.timeStamp || performance.now());
-    }
+    if (e.key !== ' ' || e.target !== document.body) return;
+    e.preventDefault();
+    if (e.type === 'keydown' && !e.repeat) press(e.timeStamp || performance.now());
+    if (e.type === 'keyup') lift(e.timeStamp || performance.now());
   };
   window.addEventListener('keydown', onKey);
+  window.addEventListener('keyup', onKey);
 
   root.append(
     h(
       'div',
       { class: 'play rhythm-play' },
       h('div', { class: 'quiz-progress' }, h('div', { class: 'quiz-meta' }, h('span', {}, t(`rhythms.level.${level.id}`)), counter), dots),
-      h('div', { class: 'panel rhythm-panel' }, art, status),
+      h('div', { class: 'panel rhythm-panel' }, art, status, holdHint),
       h('div', { class: 'pad-area' }, pad),
       footer,
     ),
@@ -295,16 +354,19 @@ function tapGame(root, app, level) {
 
   return () => {
     clear();
+    held?.release();
     window.removeEventListener('keydown', onKey);
+    window.removeEventListener('keyup', onKey);
   };
 }
 
 function hearGame(root, app, level) {
   app.setBar({ title: t('rhythms.hear'), back: 'rhythms' });
+  let heard = null; // the rhythm playing, so a replay starts it over cleanly
   const pool = patternsUpTo(level.id);
   const own = level.patterns;
 
-  return runQuiz(root, app, {
+  const cleanup = runQuiz(root, app, {
     progressKey: `rhythm-hear-${level.id}`,
     levelLabel: t(`rhythms.level.${level.id}`),
     back: 'rhythms',
@@ -320,7 +382,10 @@ function hearGame(root, app, level) {
       }
       options.sort(() => Math.random() - 0.5);
       const pattern = parsePattern(patternText);
-      const play = () => playRhythm(hitsFor(pattern, { countIn: 4 }), level.bpm);
+      const play = () => {
+        heard?.stop();
+        heard = playRhythm(hitsFor(pattern, { countIn: 4 }), level.bpm);
+      };
       return {
         patternText,
         answerId: patternText,
@@ -336,4 +401,8 @@ function hearGame(root, app, level) {
       };
     },
   });
+  return () => {
+    cleanup();
+    heard?.stop();
+  };
 }

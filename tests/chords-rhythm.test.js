@@ -87,3 +87,19 @@ test('tap grading', () => {
   assert.equal(rhythmStars(0.9), 3);
   assert.equal(rhythmStars(0.3), 0);
 });
+
+import { noteEvents, gradePresses } from '../js/logic/rhythm.js';
+
+test('long notes must be held, short notes can be tapped', () => {
+  // 60 bpm: one beat = 1000 ms. Half note, then two quarters.
+  const notes = noteEvents(parsePattern('h q q'), 60);
+  assert.deepEqual(notes.map((n) => [n.time, n.length, n.long]), [[0, 2000, true], [2000, 1000, false], [3000, 1000, false]]);
+  const held = gradePresses(notes, [{ down: 0, up: 1800 }, { down: 2000, up: 2100 }, { down: 3000, up: 3080 }]);
+  assert.deepEqual(held.results.map((r) => r.grade), ['perfect', 'perfect', 'perfect']);
+  assert.equal(held.score, 1);
+  const tapped = gradePresses(notes, [{ down: 0, up: 120 }, { down: 2000, up: 2100 }, { down: 3000, up: 3080 }]);
+  assert.equal(tapped.results[0].grade, 'short');
+  assert.ok(tapped.score < 1 && tapped.score > 0.8);
+  const missed = gradePresses(notes, [{ down: 2000, up: 2100 }]);
+  assert.deepEqual(missed.results.map((r) => r.grade), ['miss', 'perfect', 'miss']);
+});

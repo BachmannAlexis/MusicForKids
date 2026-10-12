@@ -127,7 +127,7 @@ export function playChord(notes) {
 }
 
 // Short percussive sounds: 'note' (woodblock), 'tick' (metronome, beat 1 is 'accent').
-function percussion(kind, start) {
+function percussion(kind, start, out) {
   const ac = context();
   if (!ac) return;
   const t0 = ac.currentTime + start;
@@ -143,14 +143,14 @@ function percussion(kind, start) {
   osc.frequency.exponentialRampToValueAtTime(settings.to, t0 + settings.length);
   gain.gain.setValueAtTime(settings.volume, t0);
   gain.gain.exponentialRampToValueAtTime(0.0001, t0 + settings.length);
-  osc.connect(gain).connect(ac.destination);
+  osc.connect(gain).connect(out ?? ac.destination);
   osc.start(t0);
   osc.stop(t0 + settings.length + 0.02);
 }
 
 // A held note with a flat, organ-like level, so its length can be heard
 // (a half note really sounds twice as long as a quarter note).
-function sustain(midi, start, duration) {
+function sustain(midi, start, duration, out) {
   const ac = context();
   if (!ac) return;
   const t0 = ac.currentTime + start;
@@ -159,7 +159,7 @@ function sustain(midi, start, duration) {
   gain.gain.exponentialRampToValueAtTime(0.22, t0 + 0.02);
   gain.gain.setValueAtTime(0.22, t0 + Math.max(0.03, duration - 0.05));
   gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
-  gain.connect(ac.destination);
+  gain.connect(out ?? ac.destination);
   for (const [mult, level] of [[1, 1], [2, 0.3], [3, 0.12]]) {
     const osc = ac.createOscillator();
     const partial = ac.createGain();
@@ -178,17 +178,65 @@ export function playWoodblock() {
 }
 
 // Schedules sounds at beat positions on the audio clock (precise even if the
-// page is busy). hits: [{ beat, kind: 'tick' | 'accent' | 'note' | 'tone', beats? }] Returns the moment beat 0 will be heard, in
-// performance.now() time, so taps can be compared against the sound.
+// page is busy). hits: [{ beat, kind: 'tick' | 'accent' | 'note' | 'tone', beats? }]
+// Returns { startAt, stop }: startAt is when beat 0 will be heard, in
+// performance.now() time (so taps can be compared against the sound), and
+// stop() silences everything that is still to come at once.
 export function playRhythm(hits, bpm, { leadIn = 0.15 } = {}) {
   const beat = 60 / bpm;
   const ac = context();
-  for (const hit of hits) {
-    if (hit.kind === 'tone') sustain(hit.midi ?? 67, leadIn + hit.beat * beat, hit.beats * beat * 0.92);
-    else percussion(hit.kind, leadIn + hit.beat * beat);
+  let out = null;
+  if (ac) {
+    out = ac.createGain();
+    out.connect(ac.destination);
+    for (const hit of hits) {
+      if (hit.kind === 'tone') sustain(hit.midi ?? 67, leadIn + hit.beat * beat, hit.beats * beat * 0.92, out);
+      else percussion(hit.kind, leadIn + hit.beat * beat, out);
+    }
   }
-  const latency = ac ? (ac.outputLatency || ac.baseLatency || 0) : 0;
-  return performance.now() + (leadIn + latency) * 1000;
+  const latency = ac ? ac.outputLatency || ac.baseLatency || 0 : 0;
+  return {
+    startAt: performance.now() + (leadIn + latency) * 1000,
+    stop() {
+      if (!out) return;
+      const node = out;
+      out = null;
+      // A very short fade avoids a click.
+      node.gain.setTargetAtTime(0, ac.currentTime, 0.01);
+      setTimeout(() => node.disconnect(), 100);
+    },
+  };
+}
+
+// A note that sounds for as long as a finger stays on the drum: starts at once,
+// stops when the returned release() is called.
+export function holdNote(midi = 67) {
+  const ac = context();
+  if (!ac) return () => {};
+  const t0 = ac.currentTime;
+  const gain = ac.createGain();
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.exponentialRampToValueAtTime(0.24, t0 + 0.012);
+  gain.connect(ac.destination);
+  const oscillators = [[1, 1], [2, 0.3], [3, 0.12]].map(([mult, level]) => {
+    const osc = ac.createOscillator();
+    const partial = ac.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = frequency(midi) * mult;
+    partial.gain.value = level;
+    osc.connect(partial).connect(gain);
+    osc.start(t0);
+    return osc;
+  });
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    const now = ac.currentTime;
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setTargetAtTime(0, now, 0.02);
+    oscillators.forEach((osc) => osc.stop(now + 0.15));
+  };
 }
 
 // A chord progression, chord by chord (bass + upper voices together), calling
