@@ -3,7 +3,7 @@ import { NOTES, noteLabel } from '../logic/notes.js';
 import { playMelody } from '../audio.js';
 import { h } from '../ui/dom.js';
 import { staffSvg } from '../ui/staff.js';
-import { createXylophone } from '../ui/xylophone.js';
+import { createInstrument } from '../ui/instrument.js';
 
 export function mount(root, app) {
   const staff = h('div', { class: 'staff-box' });
@@ -11,12 +11,13 @@ export function mount(root, app) {
   let stopMelody = null;
 
   function show(note) {
-    staff.innerHTML = staffSvg([{ step: note.step, color: note.color }], { label: noteLabel(note, app.settings) });
+    staff.innerHTML = staffSvg([{ step: note.step, color: note.color, accidental: note.accidental }], { label: noteLabel(note, app.settings) });
     bubble.textContent = t('explore.sing', { note: noteLabel(note, app.settings) });
     bubble.style.setProperty('--bubble-color', note.color);
   }
 
-  const xylo = createXylophone({ settings: app.settings, onPress: show });
+  const piano = app.settings.instrument === 'piano';
+  const instrument = createInstrument({ settings: app.settings, onPress: show });
   staff.innerHTML = staffSvg([]);
 
   const scaleButton = h(
@@ -29,7 +30,7 @@ export function mount(root, app) {
         stopMelody = playMelody(items, {
           bpm: 120,
           onNote: (i) => {
-            xylo.flash(items[i].note.id);
+            instrument.flash(items[i].note);
             show(items[i].note);
           },
         });
@@ -42,13 +43,14 @@ export function mount(root, app) {
   root.append(
     h('h2', {}, '🎹 ', t('game.explore')),
     h('div', { class: 'explore-top' }, staff, bubble),
-    xylo.el,
-    h('p', { class: 'hint' }, t('explore.hint')),
+    instrument.el,
+    h('p', { class: 'hint' }, t(piano ? 'explore.hint.piano' : 'explore.hint')),
+    piano && h('p', { class: 'hint' }, t('explore.blackKeys')),
     h('div', { class: 'actions' }, scaleButton),
   );
 
   return () => {
     stopMelody?.();
-    xylo.destroy();
+    instrument.destroy();
   };
 }

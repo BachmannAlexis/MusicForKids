@@ -123,6 +123,15 @@ function renderSettings() {
         (v) => changeSetting('naming', v),
       ),
       choice(
+        t('settings.instrument'),
+        s.instrument,
+        [
+          ['xylophone', `🎨 ${t('settings.xylophone')}`],
+          ['piano', `🎹 ${t('settings.piano')}`],
+        ],
+        (v) => changeSetting('instrument', v),
+      ),
+      choice(
         t('settings.sound'),
         s.sound,
         [

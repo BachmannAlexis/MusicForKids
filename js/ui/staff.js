@@ -14,7 +14,9 @@ function ledgerSteps(step) {
   return steps;
 }
 
-// notes: [{ step, color? }]
+const ACCIDENTAL = { sharp: '♯', flat: '♭' };
+
+// notes: [{ step, color?, accidental? }]
 export function staffSvg(notes = [], { width = 260, label = 'Music staff' } = {}) {
   const parts = [];
   for (let i = 0; i < 5; i++) {
@@ -36,6 +38,9 @@ export function staffSvg(notes = [], { width = 260, label = 'Music staff' } = {}
     const stemX = up ? x + 9.5 : x - 9.5;
     const stemEnd = up ? y - 3.5 * GAP : y + 3.5 * GAP;
     parts.push(`<line x1="${stemX}" x2="${stemX}" y1="${y}" y2="${stemEnd}" class="stem"/>`);
+    if (n.accidental) {
+      parts.push(`<text x="${x - 30}" y="${y + 8}" class="accidental" font-size="${GAP * 1.6}">${ACCIDENTAL[n.accidental]}</text>`);
+    }
     parts.push(
       `<ellipse cx="${x}" cy="${y}" rx="10.5" ry="7.5" transform="rotate(-20 ${x} ${y})" fill="${fill}" class="note-head"/>`,
     );

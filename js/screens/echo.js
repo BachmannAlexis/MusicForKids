@@ -5,7 +5,7 @@ import { recordBest } from '../logic/progress.js';
 import { playMelody, playSuccess, playOops } from '../audio.js';
 import { h, starsText } from '../ui/dom.js';
 import { celebrate } from '../ui/celebrate.js';
-import { createXylophone } from '../ui/xylophone.js';
+import { createInstrument } from '../ui/instrument.js';
 
 const LIVES = 3;
 
@@ -24,12 +24,12 @@ export function mount(root, app) {
 
   const status = h('p', { class: 'question', 'aria-live': 'polite' });
   const info = h('p', { class: 'echo-info' });
-  const xylo = createXylophone({
+  const instrument = createInstrument({
     settings: app.settings,
     notes: ECHO_POOL.map(getNote),
     onPress: handle,
   });
-  xylo.setDisabled(true);
+  instrument.setDisabled(true);
 
   const startButton = h('button', { class: 'btn big-play', onclick: start }, '▶️ ', t('echo.start'));
   const actions = h('div', { class: 'actions' }, startButton);
@@ -54,16 +54,16 @@ export function mount(root, app) {
 
   function replay() {
     renderInfo();
-    xylo.setDisabled(true);
+    instrument.setDisabled(true);
     status.textContent = t('echo.listen');
     const items = state.sequence.map((id) => ({ note: getNote(id), beats: 1 }));
     later(() => {
       stopMelody = playMelody(items, {
         bpm: 100,
-        onNote: (i) => xylo.flash(items[i].note.id),
+        onNote: (i) => instrument.flash(items[i].note),
         onEnd: () => {
           stopMelody = null;
-          xylo.setDisabled(false);
+          instrument.setDisabled(false);
           status.textContent = t('echo.yourTurn');
         },
       });
@@ -74,12 +74,12 @@ export function mount(root, app) {
     const outcome = play(state, note.id);
     state = outcome.state;
     if (outcome.result === 'complete') {
-      xylo.setDisabled(true);
+      instrument.setDisabled(true);
       status.textContent = cheer();
       later(playSuccess, 300);
       later(grow, 1200);
     } else if (outcome.result === 'wrong') {
-      xylo.setDisabled(true);
+      instrument.setDisabled(true);
       lives -= 1;
       renderInfo();
       later(playOops, 250);
@@ -103,11 +103,11 @@ export function mount(root, app) {
 
   status.textContent = t('game.echo.desc');
   renderInfo();
-  root.append(h('h2', {}, '🦜 ', t('game.echo')), status, info, xylo.el, actions);
+  root.append(h('h2', {}, '🦜 ', t('game.echo')), status, info, instrument.el, actions);
 
   return () => {
     stopMelody?.();
     timers.forEach(clearTimeout);
-    xylo.destroy();
+    instrument.destroy();
   };
 }

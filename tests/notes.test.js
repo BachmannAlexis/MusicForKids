@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NOTES, getNote, noteLabel, frequency, noteForKey } from '../js/logic/notes.js';
+import { NOTES, PIANO_NOTES, BLACK_NOTES, getNote, noteLabel, frequency, noteForKey } from '../js/logic/notes.js';
 
 test('scale runs from middle C to the C above', () => {
   assert.equal(NOTES.length, 8);
@@ -33,4 +33,33 @@ test('keyboard keys map to notes', () => {
 
 test('unknown note ids throw', () => {
   assert.throws(() => getNote('xx'));
+});
+
+test('piano has 13 keys from C4 to C5, five of them black', () => {
+  assert.equal(PIANO_NOTES.length, 13);
+  assert.deepEqual(
+    PIANO_NOTES.map((n) => n.midi),
+    Array.from({ length: 13 }, (_, i) => 60 + i),
+  );
+  assert.deepEqual(
+    BLACK_NOTES.map((n) => n.midi),
+    [61, 63, 66, 68, 70],
+  );
+});
+
+test('a black key can be spelled as a sharp or a flat', () => {
+  const laSharp = getNote('la#');
+  const siFlat = getNote('sib');
+  assert.equal(laSharp.midi, siFlat.midi);
+  assert.equal(noteLabel(laSharp, { lang: 'fr' }), 'La♯');
+  assert.equal(noteLabel(siFlat, { lang: 'fr' }), 'Si♭');
+  assert.equal(noteLabel(getNote('fa#'), { naming: 'letters' }), 'F♯');
+  assert.equal(siFlat.step, getNote('si').step);
+});
+
+test('W E T Y U play the black keys', () => {
+  assert.deepEqual(
+    [...'wetyu'].map((k) => noteForKey(k).midi),
+    [61, 63, 66, 68, 70],
+  );
 });

@@ -1,11 +1,11 @@
 import { t } from '../i18n.js';
 import { noteLabel } from '../logic/notes.js';
-import { SONGS, getSong, flatten } from '../logic/songs.js';
+import { SONGS, getSong, flatten, songUsesBlackKeys } from '../logic/songs.js';
 import { recordSong } from '../logic/progress.js';
 import { playMelody, playSuccess } from '../audio.js';
 import { h } from '../ui/dom.js';
 import { celebrate } from '../ui/celebrate.js';
-import { createXylophone } from '../ui/xylophone.js';
+import { createInstrument } from '../ui/instrument.js';
 
 export function mount(root, app, [songId]) {
   if (!songId || !SONGS.some((s) => s.id === songId)) {
@@ -21,6 +21,7 @@ export function mount(root, app, [songId]) {
             { class: 'song-item', href: `#/songs/${s.id}` },
             h('span', { class: 'card-emoji', 'aria-hidden': 'true' }, s.emoji),
             h('span', { class: 'song-title' }, t(`song.${s.id}`)),
+            songUsesBlackKeys(s.id) && h('span', { class: 'badge', title: t('songs.blackKeys') }, '🎹 ♯♭'),
             h('span', { class: 'stars' }, app.progress.songs[s.id] ? '★' : '☆'),
           ),
         ),
@@ -56,20 +57,26 @@ export function mount(root, app, [songId]) {
   );
   const status = h('p', { class: 'feedback', 'aria-live': 'polite' }, t('songs.hint'));
 
-  const xylo = createXylophone({ settings: app.settings, onPress: handle });
+  // Songs with sharps or flats always use the piano, since only it has black keys.
+  const needsPiano = items.some((item) => item.note.black);
+  const instrument = createInstrument({
+    settings: app.settings,
+    kind: needsPiano ? 'piano' : app.settings.instrument,
+    onPress: handle,
+  });
 
   function mark() {
     bubbles.forEach((b, i) => {
       b.classList.toggle('played', i < position);
       b.classList.toggle('next', i === position);
     });
-    xylo.setGlow(items[position]?.note.id ?? null);
+    instrument.setGlow(items[position]?.note ?? null);
     bubbles[position]?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
   }
 
   function handle(note) {
     if (stopMelody || position >= items.length) return;
-    if (note.id !== items[position].note.id) return;
+    if (note.midi !== items[position].note.midi) return;
     position += 1;
     mark();
     if (position === items.length) {
@@ -88,19 +95,19 @@ export function mount(root, app, [songId]) {
       return;
     }
     listenButton.replaceChildren('⏹ ', t('songs.stop'));
-    xylo.setDisabled(true);
-    xylo.setGlow(null);
+    instrument.setDisabled(true);
+    instrument.setGlow(null);
     stopMelody = playMelody(items, {
       bpm: 112,
       onNote: (i) => {
-        xylo.flash(items[i].note.id);
+        instrument.flash(items[i].note);
         bubbles.forEach((b, j) => b.classList.toggle('singing', j === i));
       },
       onEnd: () => {
         stopMelody = null;
         bubbles.forEach((b) => b.classList.remove('singing'));
         listenButton.replaceChildren('🔊 ', t('songs.listen'));
-        xylo.setDisabled(false);
+        instrument.setDisabled(false);
         mark();
       },
     });
@@ -122,7 +129,7 @@ export function mount(root, app, [songId]) {
     ),
     sheet,
     status,
-    xylo.el,
+    instrument.el,
     h(
       'div',
       { class: 'actions' },
@@ -134,6 +141,6 @@ export function mount(root, app, [songId]) {
 
   return () => {
     stopMelody?.();
-    xylo.destroy();
+    instrument.destroy();
   };
 }

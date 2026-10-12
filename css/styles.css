@@ -6,6 +6,7 @@
   --accent: #7c4dff;
   --accent-2: #ff6f91;
   --border: #ece4f7;
+  --key-white: #ffffff;
   --shadow: 0 6px 0 rgba(45, 42, 74, 0.12);
   --radius: 22px;
   font-family: 'Nunito', 'Baloo 2', 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
@@ -19,6 +20,7 @@
     --text: #f5f2ff;
     --muted: #b9b4d8;
     --border: #3a3660;
+    --key-white: #f1eef9;
     --shadow: 0 6px 0 rgba(0, 0, 0, 0.35);
     color-scheme: dark;
   }
@@ -30,6 +32,7 @@
   --text: #f5f2ff;
   --muted: #b9b4d8;
   --border: #3a3660;
+  --key-white: #f1eef9;
   --shadow: 0 6px 0 rgba(0, 0, 0, 0.35);
   color-scheme: dark;
 }
@@ -288,7 +291,7 @@ button {
   height: var(--bar-height);
   border: 0;
   border-radius: 14px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent 40%), var(--bar-color);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent 40%), var(--key-color);
   box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.18), var(--shadow);
   position: relative;
   display: flex;
@@ -314,7 +317,7 @@ button {
 .bar::before { top: 10px; }
 .bar::after { bottom: 46px; }
 
-.bar-label {
+.key-label {
   font-weight: 800;
   color: #fff;
   font-size: clamp(0.8rem, 2.6vw, 1.15rem);
@@ -334,14 +337,129 @@ button {
   filter: saturate(0.75);
 }
 
+/* Piano keyboard (C4 to C5 with black keys) */
+.piano {
+  position: relative;
+  height: clamp(190px, 36vh, 270px);
+  max-width: 720px;
+  margin: 18px auto 8px;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.white-keys {
+  display: flex;
+  height: 100%;
+  gap: 3px;
+}
+
+.piano-key {
+  border: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 0 10px;
+  transition: transform 0.08s;
+}
+
+.piano-key.white {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: 0 0 12px 12px;
+  background: linear-gradient(180deg, var(--key-white) 78%, var(--key-color) 78%);
+  box-shadow: inset 0 0 0 2px var(--border), var(--shadow);
+}
+
+.piano-key.white .key-label {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  font-weight: 800;
+  font-size: clamp(0.75rem, 2.6vw, 1.1rem);
+}
+
+.piano-key.black {
+  position: absolute;
+  top: 0;
+  left: calc(var(--pos) * 100%);
+  width: 9%;
+  height: 62%;
+  transform: translateX(-50%);
+  border-radius: 0 0 8px 8px;
+  background: linear-gradient(180deg, #2b2840 62%, var(--key-color) 62%);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+  z-index: 1;
+  padding-bottom: 6px;
+}
+
+.piano-key.black .key-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: clamp(0.62rem, 2.3vw, 0.9rem);
+  line-height: 1.15;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.piano-key.hit {
+  animation: hit 0.35s ease-out;
+}
+
+.piano-key.black.hit {
+  animation: hit-black 0.35s ease-out;
+}
+
+.piano-key.glow {
+  animation: glow-key 0.9s ease-in-out infinite alternate;
+}
+
+.piano-key.black.glow {
+  animation: glow-black 0.9s ease-in-out infinite alternate;
+}
+
+.piano.disabled .piano-key {
+  cursor: default;
+}
+
+@keyframes hit-black {
+  0% { transform: translateX(-50%) scale(0.94); filter: brightness(1.6); }
+  100% { transform: translateX(-50%) scale(1); filter: none; }
+}
+
+@keyframes glow-key {
+  from { box-shadow: inset 0 0 0 2px var(--border), 0 0 0 0 var(--key-color); }
+  to { box-shadow: inset 0 0 0 4px var(--key-color), 0 0 0 6px var(--key-color); }
+}
+
+@keyframes glow-black {
+  from { box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35), 0 0 0 0 var(--key-color); }
+  to { box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35), 0 0 0 5px var(--key-color); }
+}
+
+.badge {
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 2px solid var(--border);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.accidental {
+  fill: currentColor;
+  font-family: 'Noto Music', 'Segoe UI Symbol', 'Apple Symbols', 'DejaVu Sans', serif;
+}
+
 @keyframes hit {
   0% { transform: scale(0.94); filter: brightness(1.35); }
   100% { transform: scale(1); filter: none; }
 }
 
 @keyframes glow {
-  from { transform: translateY(0); box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.18), 0 0 0 0 var(--bar-color); }
-  to { transform: translateY(-8px); box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.18), 0 0 0 7px var(--bar-color); }
+  from { transform: translateY(0); box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.18), 0 0 0 0 var(--key-color); }
+  to { transform: translateY(-8px); box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.18), 0 0 0 7px var(--key-color); }
 }
 
 /* Levels */

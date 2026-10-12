@@ -12,12 +12,43 @@ export const NOTES = [
   { id: 'do2', name: 'do', letter: 'C', midi: 72, step: 5, color: '#e53935', key: 'k' },
 ];
 
+// The five black piano keys. Each can be spelled as a sharp of the note below
+// or a flat of the note above; both spellings share the same key (midi).
+const BLACK_KEYS = [
+  { midi: 61, key: 'w', color: '#f4511e', sharp: ['do', 'C', -2], flat: ['re', 'D', -1] },
+  { midi: 63, key: 'e', color: '#f9a825', sharp: ['re', 'D', -1], flat: ['mi', 'E', 0] },
+  { midi: 66, key: 't', color: '#00897b', sharp: ['fa', 'F', 1], flat: ['sol', 'G', 2] },
+  { midi: 68, key: 'y', color: '#1e88e5', sharp: ['sol', 'G', 2], flat: ['la', 'A', 3] },
+  { midi: 70, key: 'u', color: '#6d4c9f', sharp: ['la', 'A', 3], flat: ['si', 'B', 4] },
+];
+
+const spell = (k, [name, letter, step], accidental) => ({
+  id: `${name}${accidental === 'sharp' ? '#' : 'b'}`,
+  name,
+  letter,
+  accidental,
+  midi: k.midi,
+  step,
+  color: k.color,
+  key: k.key,
+  black: true,
+});
+
+// Sharps are the default spelling for black keys (what the keyboard shows).
+export const BLACK_NOTES = BLACK_KEYS.map((k) => spell(k, k.sharp, 'sharp'));
+const FLAT_NOTES = BLACK_KEYS.map((k) => spell(k, k.flat, 'flat'));
+
+// All keys of the piano keyboard from C4 to C5, in pitch order.
+export const PIANO_NOTES = [...NOTES, ...BLACK_NOTES].sort((a, b) => a.midi - b.midi);
+
+const ACCIDENTAL = { sharp: '♯', flat: '♭' };
+
 const SOLFEGE = {
   en: { do: 'Do', re: 'Re', mi: 'Mi', fa: 'Fa', sol: 'Sol', la: 'La', si: 'Si' },
   fr: { do: 'Do', re: 'Ré', mi: 'Mi', fa: 'Fa', sol: 'Sol', la: 'La', si: 'Si' },
 };
 
-const BY_ID = new Map(NOTES.map((n) => [n.id, n]));
+const BY_ID = new Map([...NOTES, ...BLACK_NOTES, ...FLAT_NOTES].map((n) => [n.id, n]));
 
 export function getNote(id) {
   const note = BY_ID.get(id);
@@ -26,17 +57,19 @@ export function getNote(id) {
 }
 
 export function noteLabel(note, { lang = 'en', naming = 'solfege' } = {}) {
-  if (naming === 'letters') return note.letter;
-  return (SOLFEGE[lang] ?? SOLFEGE.en)[note.name];
+  const base = naming === 'letters' ? note.letter : (SOLFEGE[lang] ?? SOLFEGE.en)[note.name];
+  return note.accidental ? base + ACCIDENTAL[note.accidental] : base;
 }
 
 export function frequency(midi) {
   return 440 * 2 ** ((midi - 69) / 12);
 }
 
+// Computer keyboard: A S D F G H J K play the white keys (or 1-8),
+// W E T Y U the black keys, like a piano laid out on the letter rows.
 export function noteForKey(key) {
   const k = key.toLowerCase();
   const index = '12345678'.indexOf(k);
   if (index !== -1) return NOTES[index];
-  return NOTES.find((n) => n.key === k) ?? null;
+  return PIANO_NOTES.find((n) => n.key === k) ?? null;
 }
