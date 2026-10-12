@@ -148,3 +148,21 @@ test('every mode on every note spans one octave with the right steps', () => {
     }
   }
 });
+
+import { MINOR_MODES, ALL_MODES } from '../js/logic/theory.js';
+
+test('harmonic and melodic minor sit with the modes, on La in C', () => {
+  assert.equal(names(whiteKeyMode('harmonicMinor').notes), 'La Si Do Ré Mi Fa Sol♯ La');
+  assert.equal(names(whiteKeyMode('melodicMinor').notes), 'La Si Do Ré Mi Fa♯ Sol♯ La');
+  assert.equal(names(buildMode(4, 'harmonicMinor').notes), 'Mi Fa♯ Sol La Si Do Ré♯ Mi');
+  assert.equal(buildMode(4, 'harmonicMinor').minor, 'E');
+  assert.equal(ALL_MODES.length, 9);
+  for (const mode of MINOR_MODES) {
+    for (let pc = 0; pc < 12; pc++) {
+      const { notes } = buildMode(pc, mode.id);
+      assert.equal(notes[7].midi - notes[0].midi, 12);
+      assert.equal(((notes[0].midi % 12) + 12) % 12, pc);
+      assert.deepEqual(notes.slice(1).map((n, i) => n.midi - notes[i].midi), modeSteps(mode.id));
+    }
+  }
+});

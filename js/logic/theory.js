@@ -255,16 +255,26 @@ export const MODES = [
   { id: 'locrian', degree: 6, characteristic: 4 },
 ];
 
+// The two minor scales with raised notes, offered next to the modes. In C they
+// start on La, the relative minor of Do. characteristic: the raised notes.
+export const MINOR_MODES = [
+  { id: 'harmonicMinor', scale: 'harmonic', characteristic: [6] },
+  { id: 'melodicMinor', scale: 'melodic', characteristic: [5, 6] },
+];
+
+export const ALL_MODES = [...MODES, ...MINOR_MODES];
+
 const MAJOR_OFFSETS = [0, 2, 4, 5, 7, 9, 11];
 
 export function getMode(id) {
-  const mode = MODES.find((m) => m.id === id);
+  const mode = ALL_MODES.find((m) => m.id === id);
   if (!mode) throw new Error(`Unknown mode: ${id}`);
   return mode;
 }
 
 export function modeSteps(modeId) {
-  const { degree } = getMode(modeId);
+  const { degree, scale } = getMode(modeId);
+  if (scale) return SCALE_TYPES[scale];
   const major = SCALE_TYPES.major;
   return [...major.slice(degree), ...major.slice(0, degree)];
 }
@@ -273,7 +283,12 @@ export function modeSteps(modeId) {
 // of its parent major scale (Ré dorien uses the notes of Do majeur), so it
 // shares that key signature. Its tonic sits between Do4 and Si4.
 export function buildMode(pitchClass, modeId) {
-  const { degree } = getMode(modeId);
+  const { degree, scale } = getMode(modeId);
+  if (scale) {
+    // Harmonic / melodic minor: spelled like the minor key on that note.
+    const spec = MINOR_TONICS.find((t) => ((parseTonic(t).midi % 12) + 12) % 12 === pitchClass);
+    return { notes: buildScale(spec, scale), parent: null, minor: spec };
+  }
   const parentPc = (((pitchClass - MAJOR_OFFSETS[degree]) % 12) + 12) % 12;
   const parent = MAJOR_TONICS.find((spec) => ((parseTonic(spec).midi % 12) + 12) % 12 === parentPc);
   const source = buildScale(parent, 'major')[degree];
@@ -291,5 +306,6 @@ export function buildMode(pitchClass, modeId) {
 
 // The mode on each white key of Do majeur: Do ionien, Ré dorien, Mi phrygien…
 export function whiteKeyMode(modeId) {
-  return buildMode(MAJOR_OFFSETS[getMode(modeId).degree], modeId);
+  const mode = getMode(modeId);
+  return buildMode(mode.scale ? 9 : MAJOR_OFFSETS[mode.degree], modeId);
 }
