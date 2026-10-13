@@ -1,3 +1,5 @@
+import { onTap } from './dom.js';
+
 // The circle of fifths, three rings deep: major keys outside, relative minors in
 // the middle, diminished chords inside, and a staff in the centre. It is built
 // once and then updated, so it can turn smoothly to bring a key to the top.
@@ -63,7 +65,8 @@ export function createCircle({ labels, aria, title, onPick }) {
     const g = target.closest?.('.wedge');
     if (g) onPick(g.dataset.ring, Number(g.dataset.index));
   };
-  svg.addEventListener('click', (e) => pick(e.target));
+  // React on touch-down like the instrument keys do (the circle never scrolls).
+  onTap(svg, (e) => pick(e.target));
   svg.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();

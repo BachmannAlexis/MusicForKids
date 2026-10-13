@@ -19,6 +19,7 @@ import { staffSvg } from '../ui/staff.js';
 import { createInstrument, keyboardRange } from '../ui/instrument.js';
 import { runQuiz } from './quiz-runner.js';
 import { listenButton } from './quiz.js';
+import { cadenceExplorer, cadenceQuiz, cadenceMenuRows } from './cadences.js';
 
 const scaleChoice = { tonic: 'C', type: 'major', degree: 0 };
 const buildChoice = { root: 'C', type: 'major' };
@@ -31,7 +32,8 @@ const STACK = {
   augmented: ['M3', 'M3'],
 };
 
-export function mount(root, app, [param]) {
+export function mount(root, app, [param, sub]) {
+  if (param === 'cadences') return sub ? cadenceQuiz(root, app, Number(sub)) : cadenceExplorer(root, app);
   if (param === 'scale') return inScale(root, app);
   if (param === 'build') return build(root, app);
   if (param) return quiz(root, app, getChordLevel(Number(param)));
@@ -78,6 +80,7 @@ function menu(root, app) {
           ),
         ),
       ),
+      ...cadenceMenuRows(app, featureRow),
     ),
   );
 }
@@ -194,7 +197,7 @@ function inScale(root, app) {
       ...chords.map((c, i) =>
         h(
           'button',
-          { type: 'button', onclick: () => select(i), 'aria-label': chordName(label(c.notes[0]), c.type, lang) },
+          { type: 'button', ontap: () => select(i), 'aria-label': chordName(label(c.notes[0]), c.type, lang) },
           h('span', { class: 'roman' }, c.roman),
           h('span', { class: 'symbol' }, chordSymbol(label(c.notes[0]), c.type)),
         ),

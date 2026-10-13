@@ -1,6 +1,6 @@
 import { t, setLang } from './i18n.js';
 import { load, save } from './storage.js';
-import { setSoundEnabled } from './audio.js';
+import { setSoundEnabled, warmUpAudio } from './audio.js';
 import { emptyProgress, totalStars } from './logic/progress.js';
 import { h } from './ui/dom.js';
 import { icon } from './ui/icons.js';
@@ -47,6 +47,12 @@ const app = {
     renderHeader();
   },
   rerender: () => render(),
+  go: (path) => go(path),
+  // Save a setting the app learns by itself (e.g. the phone's sound delay), without redrawing.
+  setSetting(key, value) {
+    app.settings = { ...app.settings, [key]: value };
+    persist();
+  },
 };
 
 const main = document.getElementById('main');
@@ -238,4 +244,11 @@ window.addEventListener('hashchange', syncFromLocation);
 window.addEventListener('popstate', syncFromLocation);
 
 applySettings();
+warmUpAudio();
 render();
+
+// The published build (scripts/build.mjs) turns on the offline cache; local
+// development and embedded copies of the app run without it.
+if (typeof __OFFLINE__ !== 'undefined' && __OFFLINE__ && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}

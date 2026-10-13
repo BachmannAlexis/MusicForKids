@@ -129,6 +129,10 @@ export function createInstrument({ settings, kind = settings.instrument, onPress
     setDisabled(disabled) {
       root.classList.toggle('disabled', disabled);
     },
+    // Fade a different set of keys (e.g. the notes of a scale going down).
+    setDim(dimmed) {
+      for (const [midi, el] of keys) el.classList.toggle('dim', dimmed.has(midi));
+    },
     destroy() {
       window.removeEventListener('keydown', onKey);
     },

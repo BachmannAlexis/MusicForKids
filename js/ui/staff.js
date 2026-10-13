@@ -20,8 +20,9 @@ const ACCIDENTAL = { sharp: '♯', flat: '♭', doubleSharp: '𝄪', doubleFlat:
 // (steps from the bottom line E4): sharps F C G D A E B, flats B E A D G C F.
 const SIGNATURE_STEPS = { sharp: [8, 5, 9, 6, 3, 7, 4], flat: [4, 7, 3, 6, 2, 5, 1] };
 
-// items: [{ step, color?, accidental? }] — or { chord: [those] } for notes
-// sounding together, drawn on one stem.
+// items: [{ step, color?, accidental?, beats? }] — or { chord: [those] } for
+// notes sounding together, drawn on one stem. beats gives the note's shape:
+// 4 = whole (white, no stem), 2-3 = half (white), 1.5 / 3 dotted, < 1 eighth (flag).
 // signature: { kind: 'sharp' | 'flat', count } draws a key signature after the clef.
 export function staffSvg(items = [], { width = 260, label = 'Music staff', startX = 110, signature = null } = {}) {
   const parts = [];
@@ -53,7 +54,21 @@ export function staffSvg(items = [], { width = 260, label = 'Music staff', start
     const stemX = up ? x + 9.5 : x - 9.5;
     const from = up ? stepY(low) : stepY(high);
     const to = up ? stepY(high) - 3.5 * GAP : stepY(low) + 3.5 * GAP;
-    parts.push(`<line x1="${stemX}" x2="${stemX}" y1="${from}" y2="${to}" class="stem"/>`);
+    const beats = item.beats ?? notes[0].beats ?? 1;
+    const ink = notes[0].color ?? 'currentColor';
+    if (beats < 4) parts.push(`<line x1="${stemX}" x2="${stemX}" y1="${from}" y2="${to}" class="stem" style="stroke:${ink}"/>`);
+    if (beats < 1) {
+      // A single flag at the end of the stem.
+      const dir = up ? 1 : -1;
+      parts.push(
+        `<path d="M${stemX} ${to} c${dir * 0 + 2} ${dir * 8} 13 ${dir * 11} 9 ${dir * 24} c0 ${-dir * 8} -4 ${-dir * 12} -9 ${-dir * 14}z" style="fill:${ink}"/>`,
+      );
+    }
+    if (beats === 1.5 || beats === 3) {
+      const y = stepY(high);
+      const dotY = Math.abs(high) % 2 === 0 ? y - GAP / 2 : y; // dots sit in a space
+      parts.push(`<circle cx="${x + 17}" cy="${dotY}" r="2.6" style="fill:${ink}"/>`);
+    }
 
     // Accidentals of a chord step left in turn so they don't collide.
     let column = 0;
@@ -67,8 +82,12 @@ export function staffSvg(items = [], { width = 260, label = 'Music staff', start
     }
     for (const n of notes) {
       const y = stepY(n.step);
+      const hollow = (item.beats ?? n.beats ?? 1) >= 2;
+      const color = n.color ?? 'currentColor';
       parts.push(
-        `<ellipse cx="${x}" cy="${y}" rx="10.5" ry="7.5" transform="rotate(-20 ${x} ${y})" fill="${n.color ?? 'currentColor'}" class="note-head"/>`,
+        hollow
+          ? `<ellipse cx="${x}" cy="${y}" rx="10" ry="7" transform="rotate(-20 ${x} ${y})" class="note-head" style="fill:var(--surface);stroke:${color};stroke-width:3"/>`
+          : `<ellipse cx="${x}" cy="${y}" rx="10.5" ry="7.5" transform="rotate(-20 ${x} ${y})" class="note-head" style="fill:${color}"/>`,
       );
     }
   });
@@ -143,12 +162,39 @@ export function rhythmSvg(pattern, { width = 320, label = 'Rhythm', results = nu
   return `<svg class="rhythm-staff" viewBox="0 0 ${width} 96" role="img" aria-label="${label}">${parts.join('')}</svg>`;
 }
 
-// One note value (or a short group) on its own, for the "note values" cards.
-export function figureSvg(pattern) {
-  const svg = rhythmSvg(pattern, { width: 140, beats: Math.max(pattern.beats, 1), numbers: false, label: '', left: 4 });
-  // Drop the time signature and closing bar line: this is a single figure, not a bar.
-  return svg
-    .replace(/<text x="10"[^>]*class="time-sig">4<\/text>/g, '')
-    .replace(/<line x1="134"[^>]*\/>/, '')
-    .replace('viewBox="0 0 140 96"', 'viewBox="0 8 140 62"');
+// One note value (or a short group) on its own, for the "note values" cards,
+// centred in the card: the figure's ink (head, stem, dot, flag) is measured and
+// the whole group is placed in the middle.
+export function figureSvg(pattern, { width = 140 } = {}) {
+  const gap = 34;
+  const xs = pattern.events.map((_, i) => i * gap);
+  // Left / right extent of each event's drawing, relative to its x.
+  const extent = (e) => {
+    if (e.rest) return [-8, 8];
+    const right = e.symbol === 'hd' || e.symbol === 'qd' ? 17.5 : e.symbol === 'e' && !e.beamed ? 15 : e.symbol === 'w' ? 7.5 : 7;
+    return [-7.5, right];
+  };
+  const left = Math.min(...pattern.events.map((e, i) => xs[i] + extent(e)[0]));
+  const right = Math.max(...pattern.events.map((e, i) => xs[i] + extent(e)[1]));
+  const shift = width / 2 - (left + right) / 2;
+  const at = (i) => xs[i] + shift;
+
+  const parts = [`<line x1="6" x2="${width - 6}" y1="${LINE_Y}" y2="${LINE_Y}" class="staff-line"/>`];
+  pattern.events.forEach((e, i) => {
+    const cx = at(i);
+    if (e.rest) {
+      parts.push(rest(e.symbol, cx));
+      return;
+    }
+    parts.push(head(cx, e.symbol === 'w' || e.symbol === 'h' || e.symbol === 'hd'));
+    if (e.symbol !== 'w') parts.push(stem(cx));
+    if (e.symbol === 'hd' || e.symbol === 'qd') parts.push(dot(cx));
+    if (e.symbol === 'e' && e.beamed === 'start') {
+      parts.push(`<rect x="${cx + 5.6}" y="${LINE_Y - 37}" width="${at(i + 1) - cx + 2}" height="5" class="r-fill"/>`);
+    }
+    if (e.symbol === 'e' && !e.beamed) {
+      parts.push(`<path d="M${cx + 6.6} ${LINE_Y - 36} c2 8 12 10 8 22 c0 -8 -4 -12 -8 -14z" class="r-fill"/>`);
+    }
+  });
+  return `<svg class="rhythm-staff" viewBox="0 8 ${width} 62" role="img" aria-label="">${parts.join('')}</svg>`;
 }

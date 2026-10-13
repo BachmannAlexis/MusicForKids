@@ -10,7 +10,10 @@ import { celebrate } from '../ui/celebrate.js';
 // spec: {
 //   progressKey, levelLabel, back,
 //   choices: [{ id, label, color?, ink?, title? }] (or per question, from nextQuestion),
-//   nextQuestion(previous) → { answerId, text, render(stage), play?(), playAnswer?(), reveal?, choices? }
+//   nextQuestion(previous) → { answerId, text, render(stage), play?(), playAnswer?(), reveal?, choices?, onAnswer?(correct) }
+//   renderAnswers?(container, submit) — instead of buttons, e.g. a keyboard: call
+//     submit(id, { played: true }) when the child plays an answer (it already
+//     sounded, so it is not played again); may return a cleanup function.
 // }
 // play() is called when the question appears and again after a wrong answer;
 // playAnswer() (or play()) when the child finds the right answer.
@@ -48,7 +51,7 @@ export function runQuiz(root, app, spec) {
             style: choice.color ? { '--c': choice.color, '--ink': choice.ink } : null,
             title: choice.title,
             'aria-label': choice.title,
-            onclick: (e) => answer(choice, e.currentTarget),
+            ontap: (e) => answer(choice, e.currentTarget),
           },
           choice.label,
         ),
@@ -56,6 +59,11 @@ export function runQuiz(root, app, spec) {
     );
   }
   if (spec.choices) renderChoices(spec.choices);
+  let cleanupAnswers = null;
+  if (spec.renderAnswers) {
+    answers.classList.add('custom');
+    cleanupAnswers = spec.renderAnswers(answers, (id, options) => answer({ id }, null, options));
+  }
 
   function renderDots() {
     dots.replaceChildren(
@@ -84,30 +92,34 @@ export function runQuiz(root, app, spec) {
     if (current.play) later(current.play, 350);
   }
 
-  function answer(choice, button) {
+  function answer(choice, button, { played = false } = {}) {
     if (locked) return;
     const correct = choice.id === current.answerId;
     score = recordAnswer(score, correct);
+    current.onAnswer?.(correct);
     if (correct) {
       locked = true;
-      (current.playAnswer ?? current.play)?.();
+      if (!played) (current.playAnswer ?? current.play)?.();
       later(playSuccess, 700);
-      button.classList.add('right');
+      button?.classList.add('right');
       feedback.textContent = current.reveal ? `${cheer()} ${current.reveal}` : cheer();
       feedback.className = 'feedback good';
       later(() => {
-        button.classList.remove('right');
+        button?.classList.remove('right');
         if (isFinished(score)) finish();
         else nextRound();
       }, 1500);
     } else {
-      playOops();
-      button.classList.remove('wrong');
-      void button.offsetWidth;
-      button.classList.add('wrong');
+      // A key the child played already sounded: no buzzer on top of it.
+      if (!played) playOops();
+      if (button) {
+        button.classList.remove('wrong');
+        void button.offsetWidth;
+        button.classList.add('wrong');
+      }
       feedback.textContent = t('tryAgain');
       feedback.className = 'feedback bad';
-      if (current.play) later(current.play, 600);
+      if (current.play) later(current.play, played ? 900 : 600);
     }
   }
 
@@ -135,5 +147,8 @@ export function runQuiz(root, app, spec) {
   root.append(h('div', { class: 'play quiz' }, h('div', { class: 'quiz-progress' }, meta, dots), question, stage, feedback, answers));
   nextRound();
 
-  return () => timers.forEach(clearTimeout);
+  return () => {
+    timers.forEach(clearTimeout);
+    cleanupAnswers?.();
+  };
 }

@@ -1,9 +1,28 @@
-// Tiny element helper: h('button', { class: 'x', onclick }, 'Label', child)
+// React the moment a finger (or mouse button) goes down, instead of waiting for
+// it to lift like a click does. Keyboard and screen-reader activation still
+// arrive as a click, so those keep working. The click that follows a touch is
+// skipped, even when the tapped button was redrawn in the meantime.
+let lastTap = -Infinity;
+
+export function onTap(el, handler) {
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || !e.isPrimary) return;
+    lastTap = performance.now();
+    handler(e);
+  });
+  el.addEventListener('click', (e) => {
+    if (performance.now() - lastTap < 800) return;
+    handler(e);
+  });
+}
+
+// Tiny element helper: h('button', { class: 'x', onclick, ontap }, 'Label', child)
 export function h(tag, props = {}, ...children) {
   const el = document.createElement(tag);
   for (const [key, value] of Object.entries(props)) {
     if (value == null || value === false) continue;
-    if (key.startsWith('on')) el.addEventListener(key.slice(2), value);
+    if (key === 'ontap') onTap(el, value);
+    else if (key.startsWith('on')) el.addEventListener(key.slice(2), value);
     else if (key === 'class') el.className = value;
     else if (key === 'style' && typeof value === 'object') {
       for (const [prop, v] of Object.entries(value)) el.style.setProperty(prop, v);

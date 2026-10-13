@@ -95,3 +95,55 @@ export function rhythmStars(averageScore) {
 export function patternsUpTo(levelId) {
   return RHYTHM_LEVELS.filter((l) => l.id <= levelId).flatMap((l) => l.patterns);
 }
+
+// The notes of a pattern with their timing in ms after the first beat:
+// { time, length, long } — long notes (1.5 beats or more) must be held.
+export function noteEvents(pattern, bpm) {
+  const beatMs = 60000 / bpm;
+  return pattern.events
+    .filter((e) => !e.rest)
+    .map((e) => ({ time: e.start * beatMs, length: e.beats * beatMs, long: e.beats >= 1.5 }));
+}
+
+// Grade presses on the drum ({ down, up } in ms, same clock as the notes):
+// each note is matched with the closest unused press by its start, then long
+// notes are checked for how long the finger stayed down (at least `hold` of
+// their length). Grades: 'perfect' | 'good' | 'short' (long note let go too
+// soon) | 'miss'. Score 0-1, extra presses cost half a note each.
+export function gradePresses(notes, presses, { perfect = 130, good = 250, hold = 0.6, offset = 0 } = {}) {
+  // offset: this phone's sound delay (ms) — the child hears each beat that
+  // much late and taps late by the same amount, so it is taken off.
+  presses = presses.map((p) => ({ down: p.down - offset, up: p.up - offset }));
+  const used = new Set();
+  const results = notes.map((note) => {
+    let best = -1;
+    let bestError = Infinity;
+    presses.forEach((press, i) => {
+      const error = Math.abs(press.down - note.time);
+      if (!used.has(i) && error < bestError) {
+        best = i;
+        bestError = error;
+      }
+    });
+    if (best === -1 || bestError > good) return { grade: 'miss', error: null };
+    used.add(best);
+    const press = presses[best];
+    if (note.long && press.up - press.down < note.length * hold) return { grade: 'short', error: press.down - note.time };
+    return { grade: bestError <= perfect ? 'perfect' : 'good', error: press.down - note.time };
+  });
+  const extra = presses.length - used.size;
+  const value = { perfect: 1, good: 0.6, short: 0.5, miss: 0 };
+  const points = results.reduce((sum, r) => sum + value[r.grade], 0);
+  const score = notes.length ? Math.max(0, (points - extra * 0.5) / notes.length) : 0;
+  return { results, extra, score };
+}
+
+// Learn a phone's sound delay from the child's taps: if the notes found are
+// mostly early or late by the same amount, move the correction part of the
+// way there. Kept between -60 ms and 350 ms so it can never hide a real mistake.
+export function learnOffset(offset, results) {
+  const errors = results.filter((r) => r.error !== null).map((r) => r.error).sort((a, b) => a - b);
+  if (errors.length < 2) return offset;
+  const median = errors[Math.floor(errors.length / 2)];
+  return Math.round(Math.min(350, Math.max(-60, offset + median * 0.6)));
+}

@@ -12,10 +12,29 @@ function context() {
   if (!ctx) {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return null;
-    ctx = new AudioCtx();
+    // 'interactive' asks the phone for its shortest sound delay.
+    ctx = new AudioCtx({ latencyHint: 'interactive' });
   }
   if (ctx.state === 'suspended') ctx.resume();
   return ctx;
+}
+
+// Browsers only start sound after a touch. Get the audio engine running on the
+// very first touch anywhere (even on a menu), so the first note played is not late.
+export function warmUpAudio() {
+  const wake = () => {
+    const ac = context();
+    if (!ac) return;
+    // A silent instant of sound fully unlocks audio on iPhone.
+    const buffer = ac.createBuffer(1, 1, ac.sampleRate);
+    const source = ac.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ac.destination);
+    source.start();
+  };
+  for (const type of ['pointerdown', 'keydown']) {
+    window.addEventListener(type, wake, { capture: true, once: true, passive: true });
+  }
 }
 
 // A soft, bell-like xylophone tone: a sine with a quieter octave partial.
@@ -47,6 +66,13 @@ function tone(freq, { start = 0, duration = 0.6, volume = 0.35 } = {}) {
 
 export function playNote(note, duration = 0.6) {
   tone(frequency(note.midi), { duration });
+}
+
+// The reference Do, then the mystery note: lets children who don't have perfect
+// pitch find a note by comparing it with Do.
+export function playWithReference(reference, note) {
+  tone(frequency(reference.midi), { duration: 0.5, volume: 0.28 });
+  tone(frequency(note.midi), { start: 0.85, duration: 0.9 });
 }
 
 // An interval: the two notes one after the other, then together.
@@ -101,7 +127,7 @@ export function playChord(notes) {
 }
 
 // Short percussive sounds: 'note' (woodblock), 'tick' (metronome, beat 1 is 'accent').
-function percussion(kind, start) {
+function percussion(kind, start, out) {
   const ac = context();
   if (!ac) return;
   const t0 = ac.currentTime + start;
@@ -111,20 +137,21 @@ function percussion(kind, start) {
     note: { from: 950, to: 620, volume: 0.5, length: 0.12, type: 'sine' },
     tick: { from: 1500, to: 1400, volume: 0.12, length: 0.04, type: 'square' },
     accent: { from: 2000, to: 1900, volume: 0.16, length: 0.05, type: 'square' },
+    drum: { from: 190, to: 60, volume: 0.75, length: 0.22, type: 'sine' },
   }[kind];
   osc.type = settings.type;
   osc.frequency.setValueAtTime(settings.from, t0);
   osc.frequency.exponentialRampToValueAtTime(settings.to, t0 + settings.length);
   gain.gain.setValueAtTime(settings.volume, t0);
   gain.gain.exponentialRampToValueAtTime(0.0001, t0 + settings.length);
-  osc.connect(gain).connect(ac.destination);
+  osc.connect(gain).connect(out ?? ac.destination);
   osc.start(t0);
   osc.stop(t0 + settings.length + 0.02);
 }
 
 // A held note with a flat, organ-like level, so its length can be heard
 // (a half note really sounds twice as long as a quarter note).
-function sustain(midi, start, duration) {
+function sustain(midi, start, duration, out) {
   const ac = context();
   if (!ac) return;
   const t0 = ac.currentTime + start;
@@ -133,7 +160,7 @@ function sustain(midi, start, duration) {
   gain.gain.exponentialRampToValueAtTime(0.22, t0 + 0.02);
   gain.gain.setValueAtTime(0.22, t0 + Math.max(0.03, duration - 0.05));
   gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
-  gain.connect(ac.destination);
+  gain.connect(out ?? ac.destination);
   for (const [mult, level] of [[1, 1], [2, 0.3], [3, 0.12]]) {
     const osc = ac.createOscillator();
     const partial = ac.createGain();
@@ -152,15 +179,91 @@ export function playWoodblock() {
 }
 
 // Schedules sounds at beat positions on the audio clock (precise even if the
-// page is busy). hits: [{ beat, kind: 'tick' | 'accent' | 'note' | 'tone', beats? }] Returns the moment beat 0 will be heard, in
-// performance.now() time, so taps can be compared against the sound.
+// page is busy). hits: [{ beat, kind: 'tick' | 'accent' | 'note' | 'tone', beats? }]
+// Returns { startAt, stop }: startAt is when beat 0 will be heard, in
+// performance.now() time (so taps can be compared against the sound), and
+// stop() silences everything that is still to come at once.
 export function playRhythm(hits, bpm, { leadIn = 0.15 } = {}) {
   const beat = 60 / bpm;
   const ac = context();
-  for (const hit of hits) {
-    if (hit.kind === 'tone') sustain(hit.midi ?? 67, leadIn + hit.beat * beat, hit.beats * beat * 0.92);
-    else percussion(hit.kind, leadIn + hit.beat * beat);
+  let out = null;
+  if (ac) {
+    out = ac.createGain();
+    out.connect(ac.destination);
+    for (const hit of hits) {
+      if (hit.kind === 'tone') sustain(hit.midi ?? 67, leadIn + hit.beat * beat, hit.beats * beat * 0.92, out);
+      else percussion(hit.kind, leadIn + hit.beat * beat, out);
+    }
   }
-  const latency = ac ? (ac.outputLatency || ac.baseLatency || 0) : 0;
-  return performance.now() + (leadIn + latency) * 1000;
+  const latency = ac ? ac.outputLatency || ac.baseLatency || 0 : 0;
+  return {
+    startAt: performance.now() + (leadIn + latency) * 1000,
+    stop() {
+      if (!out) return;
+      const node = out;
+      out = null;
+      // A very short fade avoids a click.
+      node.gain.setTargetAtTime(0, ac.currentTime, 0.01);
+      setTimeout(() => node.disconnect(), 100);
+    },
+  };
+}
+
+// A note that sounds for as long as a finger stays on the drum: starts at once,
+// stops when the returned release() is called.
+export function holdNote(midi = 67) {
+  const ac = context();
+  if (!ac) return () => {};
+  // A drum hit for the attack, then a soft held note underneath for the length.
+  percussion('drum', 0);
+  const t0 = ac.currentTime;
+  const gain = ac.createGain();
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.exponentialRampToValueAtTime(0.13, t0 + 0.03);
+  gain.connect(ac.destination);
+  const oscillators = [[1, 1], [2, 0.3], [3, 0.12]].map(([mult, level]) => {
+    const osc = ac.createOscillator();
+    const partial = ac.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = frequency(midi) * mult;
+    partial.gain.value = level;
+    osc.connect(partial).connect(gain);
+    osc.start(t0);
+    return osc;
+  });
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    const now = ac.currentTime;
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setTargetAtTime(0, now, 0.02);
+    oscillators.forEach((osc) => osc.stop(now + 0.15));
+  };
+}
+
+// A chord progression, chord by chord (bass + upper voices together), calling
+// onChord(index) as each one sounds. Returns stop(), like playMelody.
+export function playProgression(chords, { seconds = 1.1, onChord = () => {}, onEnd = () => {} } = {}) {
+  const timers = [];
+  chords.forEach((chord, i) => {
+    timers.push(
+      setTimeout(() => {
+        const last = i === chords.length - 1;
+        const length = last ? seconds * 1.6 : seconds * 0.95;
+        if (chord.bass) tone(frequency(chord.bass.midi), { duration: length, volume: 0.24 });
+        chord.notes.forEach((n) => tone(frequency(n.midi), { duration: length, volume: 0.18 }));
+        onChord(i);
+      }, i * seconds * 1000),
+    );
+  });
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    timers.forEach(clearTimeout);
+    onEnd();
+  };
+  timers.push(setTimeout(finish, (chords.length - 1) * seconds * 1000 + seconds * 1600));
+  return finish;
 }

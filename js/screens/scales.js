@@ -6,6 +6,7 @@ import { scaleExplorer, tonicChips, segmentedChoice } from './scale-explorer.js'
 
 // Remember the last scale for the rest of the visit.
 const choice = { tonic: 'C', type: 'major' };
+const CATEGORIES = ['major', 'harmonic', 'melodic'];
 
 export function mount(root, app) {
   app.setBar({ title: t('game.scales'), back: '' });
@@ -14,9 +15,14 @@ export function mount(root, app) {
   const tonicBar = h('div', { class: 'chip-scroller', role: 'group', 'aria-label': t('scale.tonic') });
 
   function renderPickers() {
-    segmentedChoice(typeBar, Object.keys(SCALE_TYPES).map((type) => [type, t(`scale.${type}`)]), {
+    // Major, then the two minor scales taught in solfège; the modes come after.
+    segmentedChoice(typeBar, [...CATEGORIES.map((type) => [type, t(`scale.${type}`)]), ['modes', `${t('game.modes')} →`]], {
       selected: choice.type,
       onPick: (type) => {
+        if (type === 'modes') {
+          app.go('modes');
+          return;
+        }
         choice.type = type;
         // Keep the same key when it exists in the new list (e.g. G# minor ↔ Ab major).
         const midi = parseTonic(choice.tonic).midi;

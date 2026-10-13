@@ -26,11 +26,8 @@ jobs:
         with:
           node-version: 22
       - run: npm test
-      # Publish only the app itself, not tests or tooling.
-      - name: Collect the site files
-        run: |
-          mkdir _site
-          cp -r index.html manifest.webmanifest css js icons _site/
+      # Bundle and minify the app into _site/ (only the app, not tests or tooling).
+      - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
